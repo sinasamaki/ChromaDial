@@ -206,7 +206,7 @@ private fun Dial(
 
 
         var dragTracker by remember { mutableStateOf(Offset.Zero) }
-        var draggingAngle by remember { mutableStateOf(state.degreeRange.start) }
+        var draggingAngle by remember { mutableStateOf(state.degree.coerceIn(state.degreeRange)) }
         var currentDragInteraction by remember { mutableStateOf<DragInteraction.Start?>(null) }
 
         Box(Modifier.matchParentSize()) {
