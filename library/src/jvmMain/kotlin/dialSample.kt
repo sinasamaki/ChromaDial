@@ -1,11 +1,13 @@
 package com.sinasamaki.chroma.dial
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -19,6 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -28,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
+import androidx.compose.ui.zIndex
 
 fun main() = singleWindowApplication {
 
@@ -65,6 +71,9 @@ fun main() = singleWindowApplication {
             }
             item {
                 DialExample8()
+            }
+            item {
+                DialExample9()
             }
         }
     }
@@ -413,5 +422,129 @@ fun DialExample8() {
                 )
             }
         )
+    }
+}
+
+@Composable
+fun DialExample9() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Gradient Arc - Dark Theme",
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(135f) }
+
+        Box(
+            modifier = Modifier
+                .size(280.dp)
+                .background(
+                    color = Color(0xFF1A1A1A),
+                    shape = RoundedCornerShape(48.dp)
+                )
+                .drawBehind {
+                    // Subtle shadow effect
+                    drawRoundRect(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(48.dp.toPx())
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(modifier = Modifier.size(200.dp)) {
+                Dial(
+                    degree = degree,
+                    onDegreeChanged = { degree = it },
+                    modifier = Modifier.fillMaxSize(),
+                    startDegrees = 135f,
+                    sweepDegrees = 270f,
+                    thumb = {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp),
+                            contentAlignment = Alignment.BottomCenter,
+                        ) {
+                            Box(
+                                Modifier
+                                    .zIndex(200f)
+                                    .size(16.dp)
+                                    .background(
+                                        color = Color.White,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    },
+                    track = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .blur(radius = 10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                .drawBehind {
+                                    val strokeWidth = 20.dp.toPx()
+
+                                    // Calculate active arc sweep
+                                    val normalizedDegree = (degree - 135f).coerceIn(0f, 270f)
+
+                                    // Active gradient arc
+                                    if (normalizedDegree > 0) {
+                                        drawArc(
+                                            brush = Brush.sweepGradient(
+                                                135f / 360f to Color(0xFFFF6B35),
+                                                (135f + normalizedDegree * 0.5f) / 360f to Color(
+                                                    0xFFFF8C42
+                                                ),
+                                                (135f + normalizedDegree) / 360f to Color(0xFFFFD93D),
+                                                (135f + normalizedDegree + 1f) / 360f to Color.Transparent
+                                            ),
+                                            startAngle = 135f - 90f,
+                                            sweepAngle = normalizedDegree,
+                                            useCenter = false,
+                                            style = Stroke(
+                                                width = strokeWidth,
+                                                cap = StrokeCap.Round
+                                            )
+                                        )
+                                    }
+                                }
+                        )
+
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .padding(20.dp)
+                                .background(
+                                    color = Color.Black,
+                                    shape = CircleShape,
+                                )
+                        )
+                    }
+                )
+
+                // "off" text indicator when at minimum
+                if (degree <= 135f + 5f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawBehind {
+                                val textSize = 24.sp.toPx()
+                            },
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Text(
+                            "off",
+                            color = Color(0xFF4A4A4A),
+                            fontSize = 16.sp,
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
