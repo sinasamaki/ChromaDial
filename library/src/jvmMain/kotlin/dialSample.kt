@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -115,12 +117,20 @@ fun DialExample2() {
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
-        var degree by remember { mutableFloatStateOf(135f) }
+        var degree by remember { mutableFloatStateOf(360f) }
         Dial(
             degree = degree,
             onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 135f,
+            modifier = Modifier
+                .size(
+                    200.dp,
+                    100.dp,
+                )
+                .background(
+                    color = Color.Red.copy(alpha = .08f)
+                )
+                .border(0.dp, Color.Red),
+            startDegrees = 270f,
             sweepDegrees = 180f,
             track = {
                 Box(
@@ -129,8 +139,16 @@ fun DialExample2() {
                         .drawBehind {
                             drawArc(
                                 color = Color(0xFF3A3A3A),
-                                startAngle = 135f - 90f,
-                                sweepAngle = 180f,
+                                startAngle = it.degreeRange.start - 90f,
+                                sweepAngle = it.degreeRange.endInclusive - it.degreeRange.start,
+                                topLeft = Offset(
+                                    32.dp.toPx() / 2,
+                                    32.dp.toPx() / 2,
+                                ),
+                                size = Size(
+                                    width = (it.radius * 2) - 32.dp.toPx(),
+                                    height = (it.radius * 2) - 32.dp.toPx(),
+                                ),
                                 useCenter = false,
                                 style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Round)
                             )
@@ -484,7 +502,10 @@ fun DialExample9() {
                             Modifier
                                 .fillMaxSize()
                                 .clip(CircleShape)
-                                .blur(radius = 10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                .blur(
+                                    radius = 10.dp,
+                                    edgeTreatment = BlurredEdgeTreatment.Unbounded
+                                )
                                 .drawBehind {
                                     val strokeWidth = 20.dp.toPx()
 

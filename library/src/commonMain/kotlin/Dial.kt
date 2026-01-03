@@ -1,6 +1,7 @@
 package com.sinasamaki.chroma.dial
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -45,19 +46,32 @@ import kotlin.math.roundToInt
 val Sky500 = Color.Blue
 val Zinc200 = Color.White
 
+enum class RadiusMode {
+    WIDTH,
+    HEIGHT
+}
+
 @Stable
 class DialState(
     initialDegree: Float,
     val degreeRange: ClosedFloatingPointRange<Float>,
     val steps: Int = 0,
+    val radiusMode: RadiusMode = RadiusMode.WIDTH,
     var onValueChangeFinished: (() -> Unit)? = null
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
     private var overshotAngleState by mutableFloatStateOf(0f)
+    private var radiusState by mutableFloatStateOf(0f)
 
     init {
         require(steps >= 0) { "steps must be >= 0" }
     }
+
+    var radius: Float
+        internal set(value) {
+            radiusState = value
+        }
+        get() = radiusState
 
     fun calculateSnappedValue(value: Float): Float {
         if (steps == 0) return value.coerceIn(degreeRange)
@@ -96,6 +110,7 @@ fun Dial(
     modifier: Modifier = Modifier,
     startDegrees: Float,
     sweepDegrees: Float,
+    radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     steps: Int = 0,
@@ -104,7 +119,7 @@ fun Dial(
             Modifier.size(48.dp).background(color = Sky500, shape = CircleShape)
         )
     },
-    track: @Composable (DialState) -> Unit = {
+    track: @Composable (DialState) -> Unit = { state ->
         Box(
             Modifier
                 .fillMaxSize()
@@ -112,7 +127,7 @@ fun Dial(
                     drawCircle(
                         color = Zinc200.copy(alpha = .2f),
                         style = Stroke(width = 48.dp.toPx()),
-                        radius = (size.width / 2) - 24.dp.toPx()
+                        radius = state.radius - 24.dp.toPx()
                     )
                 }
         )
@@ -124,6 +139,7 @@ fun Dial(
         onDegreeChanged = onDegreeChanged,
         modifier = modifier,
         degreeRange = degreeRange,
+        radiusMode = radiusMode,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
         steps = steps,
@@ -138,6 +154,7 @@ fun Dial(
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
     degreeRange: ClosedFloatingPointRange<Float> = 0f..360f,
+    radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     steps: Int = 0,
@@ -146,7 +163,7 @@ fun Dial(
             Modifier.size(48.dp).background(color = Sky500, shape = CircleShape)
         )
     },
-    track: @Composable (DialState) -> Unit = {
+    track: @Composable (DialState) -> Unit = { state ->
         Box(
             Modifier
                 .fillMaxSize()
@@ -154,14 +171,14 @@ fun Dial(
                     drawCircle(
                         color = Zinc200.copy(alpha = .2f),
                         style = Stroke(width = 48.dp.toPx()),
-                        radius = (size.width / 2) - 24.dp.toPx()
+                        radius = state.radius - 24.dp.toPx()
                     )
                 }
         )
     }
 ) {
-    val state = remember(degreeRange, steps) {
-        DialState(degree, degreeRange, steps, onValueChangeFinished)
+    val state = remember(degreeRange, steps, radiusMode) {
+        DialState(degree, degreeRange, steps, radiusMode, onValueChangeFinished)
     }
     state.onValueChangeFinished = onValueChangeFinished
     state.onValueChange = onDegreeChanged
@@ -200,7 +217,14 @@ private fun Dial(
         }
 
         val thumbSize = with(density) { 48.dp.toPx() }
-        val transformOriginY = (dialSize.width / 2f) / thumbSize
+
+        // Calculate radius based on radiusMode and set it on state
+        state.radius = when (state.radiusMode) {
+            RadiusMode.WIDTH -> dialSize.width / 2f
+            RadiusMode.HEIGHT -> dialSize.height / 2f
+        }
+
+        val transformOriginY = state.radius / thumbSize
 
         var thumbPosition by remember { mutableStateOf(Offset.Zero) }
 
@@ -232,28 +256,28 @@ private fun Dial(
                 .graphicsLayer {
                     // Calculate position based on touchAngle instead of rotating
                     val angleInRadians = (state.degree - 90f) * PI.toFloat() / 180f
-                    val radius =
-                        dialSize.width / 2f - thumbSize / 2f // Offset halfway inwards by thumb size
-                    val centerX = dialSize.width / 2f
-                    val centerY = dialSize.height / 2f
+                    val thumbRadius = state.radius - thumbSize / 2f // Offset halfway inwards by thumb size
+
+                    val centerX = state.radius
+                    val centerY = state.radius
 
                     // Calculate target position on the circle
-                    val targetX = centerX + radius * kotlin.math.cos(angleInRadians)
-                    val targetY = centerY + radius * kotlin.math.sin(angleInRadians)
+                    val targetX = centerX + thumbRadius * kotlin.math.cos(angleInRadians)
+                    val targetY = centerY + thumbRadius * kotlin.math.sin(angleInRadians)
 
                     // Current position is TopCenter, so thumb center is at (centerX, thumbSize/2)
-                    val currentX = dialSize.width / 2f
+                    val currentX = state.radius
                     val currentY = thumbSize / 2f
 
                     // Translate to the target position
                     translationX = targetX - currentX
-                    translationY = targetY - currentY
+                    translationY = targetY - (thumbSize / 2) //currentY
                 }
                 .onGloballyPositioned {
                     thumbPosition = it.positionInParent()
                 }
                 .pointerInput(state.degreeRange) {
-                    val centerPx = Offset(dialSize.width / 2f, dialSize.height / 2f)
+                    val centerPx = Offset(state.radius, state.radius)
 
                     fun calculateAngle(offset: Offset): Float {
                         val dx = offset.x - centerPx.x
@@ -280,7 +304,7 @@ private fun Dial(
                             dragOffset += change.positionChange()
                             dragTracker = dragOffset
                             val dragAngle = calculateAngle(dragOffset)
-                            println("drag = $dragOffset \t | ${change.position}")
+//                            println("drag = $dragOffset \t | ${change.position}")
                             var delta = dragAngle - previousAngle
 
                             // Handle wrap-around at 0/360 degrees for delta calculation
@@ -330,7 +354,8 @@ private fun Dial(
                             }
                         }
                     )
-                },
+                }
+                .border(0.dp, Color.Blue),
             content = { }
         )
     }
