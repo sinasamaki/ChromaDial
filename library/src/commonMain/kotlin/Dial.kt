@@ -62,6 +62,7 @@ class DialState(
     private var degreeState by mutableFloatStateOf(initialDegree)
     private var overshotAngleState by mutableFloatStateOf(0f)
     private var radiusState by mutableFloatStateOf(0f)
+    private var thumbSizeState by mutableFloatStateOf(0f)
 
     init {
         require(steps >= 0) { "steps must be >= 0" }
@@ -72,6 +73,12 @@ class DialState(
             radiusState = value
         }
         get() = radiusState
+
+    var thumbSize: Float
+        internal set(value) {
+            thumbSizeState = value
+        }
+        get() = thumbSizeState
 
     fun calculateSnappedValue(value: Float): Float {
         if (steps == 0) return value.coerceIn(degreeRange)
@@ -216,15 +223,13 @@ private fun Dial(
             }
         }
 
-        val thumbSize = with(density) { 48.dp.toPx() }
-
         // Calculate radius based on radiusMode and set it on state
         state.radius = when (state.radiusMode) {
             RadiusMode.WIDTH -> dialSize.width / 2f
             RadiusMode.HEIGHT -> dialSize.height / 2f
         }
 
-        val transformOriginY = state.radius / thumbSize
+        val transformOriginY = if (state.thumbSize > 0f) state.radius / state.thumbSize else 0f
 
         var thumbPosition by remember { mutableStateOf(Offset.Zero) }
 
@@ -239,8 +244,11 @@ private fun Dial(
 
         Box(
             modifier = Modifier
-                .size(48.dp)
                 .align(Alignment.TopCenter)
+                .onGloballyPositioned { coordinates ->
+                    // Measure the thumb size and store it in state
+                    state.thumbSize = coordinates.size.width.toFloat()
+                }
                 .hoverable(interactionSource)
                 .graphicsLayer {
                     rotationZ = state.degree
@@ -249,114 +257,119 @@ private fun Dial(
             content = { thumb(state) }
         )
 
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .align(Alignment.TopCenter)
-                .graphicsLayer {
-                    // Calculate position based on touchAngle instead of rotating
-                    val angleInRadians = (state.degree - 90f) * PI.toFloat() / 180f
-                    val thumbRadius = state.radius - thumbSize / 2f // Offset halfway inwards by thumb size
+        // Touch sensor Box - only render if thumb size is measured
+        if (state.thumbSize > 0f) {
+            Box(
+                modifier = Modifier
+                    .size(with(density) { state.thumbSize.toDp() })
+                    .align(Alignment.TopCenter)
+                    .graphicsLayer {
+                        // Calculate position based on touchAngle instead of rotating
+                        val angleInRadians = (state.degree - 90f) * PI.toFloat() / 180f
+                        val thumbRadius =
+                            state.radius - state.thumbSize / 2f // Offset halfway inwards by thumb size
 
-                    val centerX = state.radius
-                    val centerY = state.radius
+                        val centerX = state.radius
+                        val centerY = state.radius
 
-                    // Calculate target position on the circle
-                    val targetX = centerX + thumbRadius * kotlin.math.cos(angleInRadians)
-                    val targetY = centerY + thumbRadius * kotlin.math.sin(angleInRadians)
+                        // Calculate target position on the circle
+                        val targetX = centerX + thumbRadius * kotlin.math.cos(angleInRadians)
+                        val targetY = centerY + thumbRadius * kotlin.math.sin(angleInRadians)
 
-                    // Current position is TopCenter, so thumb center is at (centerX, thumbSize/2)
-                    val currentX = state.radius
-                    val currentY = thumbSize / 2f
+                        // Current position is TopCenter, so thumb center is at (centerX, thumbSize/2)
+                        val currentX = state.radius
+                        val currentY = state.thumbSize / 2f
 
-                    // Translate to the target position
-                    translationX = targetX - currentX
-                    translationY = targetY - (thumbSize / 2) //currentY
-                }
-                .onGloballyPositioned {
-                    thumbPosition = it.positionInParent()
-                }
-                .pointerInput(state.degreeRange) {
-                    val centerPx = Offset(state.radius, state.radius)
-
-                    fun calculateAngle(offset: Offset): Float {
-                        val dx = offset.x - centerPx.x
-                        val dy = offset.y - centerPx.y
-                        val radians = atan2(dy, dx)
-                        val degrees = radians * 180f / PI.toFloat()
-                        return degrees
+                        // Translate to the target position
+                        translationX = targetX - currentX
+                        translationY = targetY - (state.thumbSize / 2) //currentY
                     }
+                    .onGloballyPositioned {
+                        thumbPosition = it.positionInParent()
+                    }
+                    .pointerInput(state.degreeRange) {
+                        val centerPx = Offset(state.radius, state.radius)
 
-                    var previousAngle by mutableStateOf(0f)
-                    var dragOffset by mutableStateOf(Offset.Zero)
-                    var dragInteraction: Interaction? = null
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            dragOffset = offset + thumbPosition
-                            previousAngle = calculateAngle(dragOffset)
-                            val interaction = DragInteraction.Start()
-                            dragInteraction = interaction
-                            scope.launch {
-                                interactionSource.emit(interaction)
-                            }
-                        },
-                        onDrag = { change, _ ->
-                            dragOffset += change.positionChange()
-                            dragTracker = dragOffset
-                            val dragAngle = calculateAngle(dragOffset)
-//                            println("drag = $dragOffset \t | ${change.position}")
-                            var delta = dragAngle - previousAngle
+                        fun calculateAngle(offset: Offset): Float {
+                            val dx = offset.x - centerPx.x
+                            val dy = offset.y - centerPx.y
+                            val radians = atan2(dy, dx)
+                            val degrees = radians * 180f / PI.toFloat()
+                            return degrees
+                        }
 
-                            // Handle wrap-around at 0/360 degrees for delta calculation
-                            if (delta > 180f) delta -= 360f
-                            if (delta < -180f) delta += 360f
-
-                            // Calculate what the new angle would be
-                            draggingAngle += delta
-                            val targetAngle = state.degree + delta
-
-                            // Only update if target is within range
-                            if (draggingAngle in state.degreeRange) {
-//                                state.degree = draggingAngle
-                                state.overshotAngle = 0f
-                                state.onValueChange(state.calculateSnappedValue(draggingAngle))
-                            } else {
-                                // Clamp to range but don't update previousAngle
-                                // This keeps the finger "tracking" so it can come back
-                                val clampedAngle = draggingAngle.coerceIn(state.degreeRange)
-
-                                // Calculate overshot amount
-                                if (draggingAngle < state.degreeRange.start) {
-                                    state.overshotAngle = draggingAngle - state.degreeRange.start
-                                } else if (draggingAngle > state.degreeRange.endInclusive) {
-                                    state.overshotAngle =
-                                        draggingAngle - state.degreeRange.endInclusive
+                        var previousAngle by mutableStateOf(0f)
+                        var dragOffset by mutableStateOf(Offset.Zero)
+                        var dragInteraction: Interaction? = null
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                dragOffset = offset + thumbPosition
+                                previousAngle = calculateAngle(dragOffset)
+                                val interaction = DragInteraction.Start()
+                                dragInteraction = interaction
+                                scope.launch {
+                                    interactionSource.emit(interaction)
                                 }
+                            },
+                            onDrag = { change, _ ->
+                                dragOffset += change.positionChange()
+                                dragTracker = dragOffset
+                                val dragAngle = calculateAngle(dragOffset)
+//                            println("drag = $dragOffset \t | ${change.position}")
+                                var delta = dragAngle - previousAngle
+
+                                // Handle wrap-around at 0/360 degrees for delta calculation
+                                if (delta > 180f) delta -= 360f
+                                if (delta < -180f) delta += 360f
+
+                                // Calculate what the new angle would be
+                                draggingAngle += delta
+                                val targetAngle = state.degree + delta
+
+                                // Only update if target is within range
+                                if (draggingAngle in state.degreeRange) {
+//                                state.degree = draggingAngle
+                                    state.overshotAngle = 0f
+                                    state.onValueChange(state.calculateSnappedValue(draggingAngle))
+                                } else {
+                                    // Clamp to range but don't update previousAngle
+                                    // This keeps the finger "tracking" so it can come back
+                                    val clampedAngle = draggingAngle.coerceIn(state.degreeRange)
+
+                                    // Calculate overshot amount
+                                    if (draggingAngle < state.degreeRange.start) {
+                                        state.overshotAngle =
+                                            draggingAngle - state.degreeRange.start
+                                    } else if (draggingAngle > state.degreeRange.endInclusive) {
+                                        state.overshotAngle =
+                                            draggingAngle - state.degreeRange.endInclusive
+                                    }
 
 //                                state.degree = clampedAngle
-                                state.onValueChange(state.calculateSnappedValue(clampedAngle))
-                            }
-                            previousAngle = dragAngle
-                        },
-                        onDragEnd = {
-                            dragTracker = Offset.Zero
-                            draggingAngle = state.degree
-                            state.overshotAngle = 0f
-                            state.onValueChangeFinished?.invoke()
-                            (dragInteraction as? DragInteraction.Start)?.let {
-                                scope.launch {
-                                    interactionSource.emit(
-                                        DragInteraction.Stop(
-                                            it
+                                    state.onValueChange(state.calculateSnappedValue(clampedAngle))
+                                }
+                                previousAngle = dragAngle
+                            },
+                            onDragEnd = {
+                                dragTracker = Offset.Zero
+                                draggingAngle = state.degree
+                                state.overshotAngle = 0f
+                                state.onValueChangeFinished?.invoke()
+                                (dragInteraction as? DragInteraction.Start)?.let {
+                                    scope.launch {
+                                        interactionSource.emit(
+                                            DragInteraction.Stop(
+                                                it
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
-                        }
-                    )
-                }
-                .border(0.dp, Color.Blue),
-            content = { }
-        )
+                        )
+                    }
+                    .border(0.dp, Color.Blue),
+                content = { }
+            )
+        }
     }
 }

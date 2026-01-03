@@ -26,16 +26,22 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
 import androidx.compose.ui.zIndex
+import kotlin.math.PI
+import kotlin.math.atan2
 
 fun main() = singleWindowApplication {
 
@@ -125,18 +131,43 @@ fun DialExample2() {
                 .size(
                     200.dp,
                     100.dp,
-                )
-                .background(
-                    color = Color.Red.copy(alpha = .08f)
-                )
-                .border(0.dp, Color.Red),
+                ),
             startDegrees = 270f,
             sweepDegrees = 180f,
+            thumb = {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = Color.Magenta,
+                            shape = CircleShape,
+                        )
+                )
+            },
             track = {
                 Box(
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
+                            val path = Path().apply {
+                                addArc(
+                                    oval = Rect(
+                                        offset = Offset(
+                                            32.dp.toPx() / 2,
+                                            32.dp.toPx() / 2,
+                                        ),
+                                        size = Size(
+                                            width = (it.radius * 2) - 32.dp.toPx(),
+                                            height = (it.radius * 2) - 32.dp.toPx(),
+                                        )
+                                    ),
+                                    startAngleDegrees = it.degreeRange.start - 90f,
+                                    sweepAngleDegrees = it.degreeRange.endInclusive - it.degreeRange.start,
+                                )
+                            }
+                            val measure = PathMeasure().apply {
+                                setPath(path, false)
+                            }
                             drawArc(
                                 color = Color(0xFF3A3A3A),
                                 startAngle = it.degreeRange.start - 90f,
@@ -150,8 +181,58 @@ fun DialExample2() {
                                     height = (it.radius * 2) - 32.dp.toPx(),
                                 ),
                                 useCenter = false,
-                                style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Round)
+                                style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Butt)
                             )
+                            drawArc(
+                                color = Color.Magenta.copy(alpha = .6f),
+                                startAngle = it.degreeRange.start - 90f,
+                                sweepAngle = it.degree - it.degreeRange.start,
+                                topLeft = Offset(
+                                    32.dp.toPx() / 2,
+                                    32.dp.toPx() / 2,
+                                ),
+                                size = Size(
+                                    width = (it.radius * 2) - 32.dp.toPx(),
+                                    height = (it.radius * 2) - 32.dp.toPx(),
+                                ),
+                                useCenter = false,
+                                style = Stroke(
+                                    width = 32.dp.toPx(),
+                                    cap = StrokeCap.Butt,
+                                )
+                            )
+
+                            drawPath(
+                                path = path,
+                                color = Color.Green,
+                                style = Stroke(width = 1f)
+                            )
+
+                            for (i in 0..80) {
+                                val progress = i / 80f
+                                val distance = progress * measure.length
+                                val pos = measure.getPosition(distance)
+                                val tangent = measure.getTangent(distance)
+                                val degrees = atan2(tangent.y, tangent.x) * 180f / PI.toFloat()
+
+                                drawCircle(
+                                    color = Color.Green,
+                                    radius = 1f,
+                                    center = pos,
+                                )
+
+                                rotate(
+                                    degrees = degrees,
+                                    pivot = pos,
+                                ) {
+                                    drawLine(
+                                        color = Color.Green,
+                                        start = pos + Offset(0f, 20f),
+                                        end = pos - Offset(0f, 20f)
+                                    )
+                                }
+                            }
+
                         }
                 )
             }
@@ -483,8 +564,9 @@ fun DialExample9() {
                     thumb = {
                         Box(
                             modifier = Modifier
-                                .size(64.dp),
-                            contentAlignment = Alignment.BottomCenter,
+                                .fillMaxSize(),
+//                                .size(64.dp)
+                            contentAlignment = Alignment.TopCenter,
                         ) {
                             Box(
                                 Modifier
@@ -503,7 +585,7 @@ fun DialExample9() {
                                 .fillMaxSize()
                                 .clip(CircleShape)
                                 .blur(
-                                    radius = 10.dp,
+                                    radius = 15.dp,
                                     edgeTreatment = BlurredEdgeTreatment.Unbounded
                                 )
                                 .drawBehind {
@@ -534,6 +616,44 @@ fun DialExample9() {
                                     }
                                 }
                         )
+
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .blur(
+                                    radius = 1.dp,
+                                    edgeTreatment = BlurredEdgeTreatment.Unbounded
+                                )
+                                .drawBehind {
+                                    val strokeWidth = 2.dp.toPx()
+
+                                    // Calculate active arc sweep
+                                    val normalizedDegree = (degree - 135f).coerceIn(0f, 270f)
+
+                                    // Active gradient arc
+                                    if (normalizedDegree > 0) {
+                                        drawArc(
+                                            brush = Brush.sweepGradient(
+                                                135f / 360f to Color(0xFFFF936F),
+                                                (135f + normalizedDegree * 0.5f) / 360f to Color(
+                                                    0xFFFFA76F
+                                                ),
+                                                (135f + normalizedDegree) / 360f to Color(0xFFFFE788),
+                                                (135f + normalizedDegree + 1f) / 360f to Color.Transparent
+                                            ),
+                                            startAngle = 135f - 90f,
+                                            sweepAngle = normalizedDegree,
+                                            useCenter = false,
+                                            style = Stroke(
+                                                width = strokeWidth,
+                                                cap = StrokeCap.Round
+                                            )
+                                        )
+                                    }
+                                }
+                        )
+
 
                         Box(
                             Modifier
