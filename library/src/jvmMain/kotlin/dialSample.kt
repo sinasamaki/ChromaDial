@@ -47,7 +47,7 @@ fun main() = singleWindowApplication {
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(color = Color(0xFF0A0A0A)),
+            .background(color = Neutral950),
         contentAlignment = Alignment.Center
     ) {
         LazyVerticalGrid(
@@ -96,7 +96,7 @@ fun DialExample1() {
     ) {
         Text(
             "Full Circle",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -119,7 +119,7 @@ fun DialExample2() {
     ) {
         Text(
             "Semi-Circle Arc",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -139,7 +139,7 @@ fun DialExample2() {
                     modifier = Modifier
                         .size(32.dp)
                         .background(
-                            color = Color.Magenta,
+                            color = Fuchsia500,
                             shape = CircleShape,
                         )
                 )
@@ -169,7 +169,7 @@ fun DialExample2() {
                                 setPath(path, false)
                             }
                             drawArc(
-                                color = Color(0xFF3A3A3A),
+                                color = Zinc700,
                                 startAngle = it.degreeRange.start - 90f,
                                 sweepAngle = it.degreeRange.endInclusive - it.degreeRange.start,
                                 topLeft = Offset(
@@ -184,7 +184,7 @@ fun DialExample2() {
                                 style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Butt)
                             )
                             drawArc(
-                                color = Color.Magenta.copy(alpha = .6f),
+                                color = Fuchsia500.copy(alpha = .6f),
                                 startAngle = it.degreeRange.start - 90f,
                                 sweepAngle = it.degree - it.degreeRange.start,
                                 topLeft = Offset(
@@ -204,7 +204,7 @@ fun DialExample2() {
 
                             drawPath(
                                 path = path,
-                                color = Color.Green,
+                                color = Green500,
                                 style = Stroke(width = 1f)
                             )
 
@@ -216,7 +216,7 @@ fun DialExample2() {
                                 val degrees = atan2(tangent.y, tangent.x) * 180f / PI.toFloat()
 
                                 drawCircle(
-                                    color = Color.Green,
+                                    color = Green500,
                                     radius = 1f,
                                     center = pos,
                                 )
@@ -226,7 +226,7 @@ fun DialExample2() {
                                     pivot = pos,
                                 ) {
                                     drawLine(
-                                        color = Color.Green,
+                                        color = Green500,
                                         start = pos + Offset(0f, 20f),
                                         end = pos - Offset(0f, 20f)
                                     )
@@ -248,7 +248,7 @@ fun DialExample3() {
     ) {
         Text(
             "Quarter Circle - Cyan",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -262,7 +262,7 @@ fun DialExample3() {
             thumb = {
                 Box(
                     Modifier.size(48.dp)
-                        .background(color = Color.Cyan, shape = CircleShape)
+                        .background(color = Cyan500, shape = CircleShape)
                 )
             },
             track = {
@@ -271,7 +271,7 @@ fun DialExample3() {
                         .fillMaxSize()
                         .drawBehind {
                             drawArc(
-                                color = Color.Cyan.copy(alpha = .3f),
+                                color = Cyan500.copy(alpha = .3f),
                                 startAngle = 0f - 90f,
                                 sweepAngle = 90f,
                                 useCenter = false,
@@ -292,7 +292,7 @@ fun DialExample4() {
     ) {
         Text(
             "With 8 Steps",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -307,7 +307,7 @@ fun DialExample4() {
             thumb = {
                 Box(
                     Modifier.size(40.dp)
-                        .background(color = Color.Yellow, shape = CircleShape)
+                        .background(color = Yellow400, shape = CircleShape)
                 )
             },
             track = {
@@ -316,7 +316,7 @@ fun DialExample4() {
                         .fillMaxSize()
                         .drawBehind {
                             drawCircle(
-                                color = Color.Yellow.copy(alpha = .2f),
+                                color = Yellow400.copy(alpha = .2f),
                                 style = Stroke(width = 40.dp.toPx()),
                                 radius = (size.width / 2) - 20.dp.toPx()
                             )
@@ -335,7 +335,7 @@ fun DialExample5() {
     ) {
         Text(
             "Gradient Track",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -351,7 +351,7 @@ fun DialExample5() {
                     Modifier.size(56.dp)
                         .background(
                             brush = Brush.radialGradient(
-                                colors = listOf(Color.Magenta, Color(0xFFFF1493))
+                                colors = listOf(Fuchsia500, Pink500)
                             ),
                             shape = CircleShape
                         )
@@ -365,10 +365,10 @@ fun DialExample5() {
                             drawCircle(
                                 brush = Brush.sweepGradient(
                                     colors = listOf(
-                                        Color.Magenta.copy(alpha = .3f),
-                                        Color.Cyan.copy(alpha = .3f),
-                                        Color.Yellow.copy(alpha = .3f),
-                                        Color.Magenta.copy(alpha = .3f)
+                                        Fuchsia500.copy(alpha = .3f),
+                                        Cyan500.copy(alpha = .3f),
+                                        Yellow400.copy(alpha = .3f),
+                                        Fuchsia500.copy(alpha = .3f)
                                     )
                                 ),
                                 style = Stroke(width = 56.dp.toPx()),
@@ -389,7 +389,7 @@ fun DialExample6() {
     ) {
         Text(
             "Thick Track - Green",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -403,7 +403,7 @@ fun DialExample6() {
             thumb = {
                 Box(
                     Modifier.size(24.dp)
-                        .background(color = Color.Green, shape = CircleShape)
+                        .background(color = Green500, shape = CircleShape)
                 )
             },
             track = {
@@ -412,7 +412,7 @@ fun DialExample6() {
                         .fillMaxSize()
                         .drawBehind {
                             drawCircle(
-                                color = Color.Green.copy(alpha = .25f),
+                                color = Green500.copy(alpha = .25f),
                                 style = Stroke(width = 70.dp.toPx()),
                                 radius = (size.width / 2) - 35.dp.toPx()
                             )
@@ -431,7 +431,7 @@ fun DialExample7() {
     ) {
         Text(
             "Large Square Thumb",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -446,7 +446,7 @@ fun DialExample7() {
                 Box(
                     Modifier.size(60.dp)
                         .background(
-                            color = Color(0xFFFF6B35),
+                            color = Orange500,
                             shape = RoundedCornerShape(12.dp)
                         )
                 )
@@ -457,7 +457,7 @@ fun DialExample7() {
                         .fillMaxSize()
                         .drawBehind {
                             drawCircle(
-                                color = Color(0xFFFF6B35).copy(alpha = .2f),
+                                color = Orange500.copy(alpha = .2f),
                                 style = Stroke(width = 60.dp.toPx()),
                                 radius = (size.width / 2) - 30.dp.toPx()
                             )
@@ -476,7 +476,7 @@ fun DialExample8() {
     ) {
         Text(
             "3/4 Arc - Purple",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -493,7 +493,7 @@ fun DialExample8() {
                     Modifier.size(44.dp)
                         .background(
                             brush = Brush.linearGradient(
-                                colors = listOf(Color(0xFF9D4EDD), Color(0xFF7209B7))
+                                colors = listOf(Purple400, Purple600)
                             ),
                             shape = CircleShape
                         )
@@ -507,9 +507,9 @@ fun DialExample8() {
                             drawArc(
                                 brush = Brush.sweepGradient(
                                     colors = listOf(
-                                        Color(0xFF9D4EDD).copy(alpha = .3f),
-                                        Color(0xFF7209B7).copy(alpha = .3f),
-                                        Color(0xFF9D4EDD).copy(alpha = .3f)
+                                        Purple400.copy(alpha = .3f),
+                                        Purple600.copy(alpha = .3f),
+                                        Purple400.copy(alpha = .3f)
                                     )
                                 ),
                                 startAngle = 135f - 90f,
@@ -532,7 +532,7 @@ fun DialExample9() {
     ) {
         Text(
             "Gradient Arc - Dark Theme",
-            color = Color.White,
+            color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -542,13 +542,13 @@ fun DialExample9() {
             modifier = Modifier
                 .size(280.dp)
                 .background(
-                    color = Color(0xFF1A1A1A),
+                    color = Zinc900,
                     shape = RoundedCornerShape(48.dp)
                 )
                 .drawBehind {
                     // Subtle shadow effect
                     drawRoundRect(
-                        color = Color.Black.copy(alpha = 0.3f),
+                        color = Black.copy(alpha = 0.3f),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(48.dp.toPx())
                     )
                 },
@@ -573,7 +573,7 @@ fun DialExample9() {
                                     .zIndex(200f)
                                     .size(16.dp)
                                     .background(
-                                        color = Color.White,
+                                        color = White,
                                         shape = CircleShape
                                     )
                             )
@@ -598,12 +598,12 @@ fun DialExample9() {
                                     if (normalizedDegree > 0) {
                                         drawArc(
                                             brush = Brush.sweepGradient(
-                                                135f / 360f to Color(0xFFFF6B35),
+                                                135f / 360f to Orange500,
                                                 (135f + normalizedDegree * 0.5f) / 360f to Color(
                                                     0xFFFF8C42
                                                 ),
-                                                (135f + normalizedDegree) / 360f to Color(0xFFFFD93D),
-                                                (135f + normalizedDegree + 1f) / 360f to Color.Transparent
+                                                (135f + normalizedDegree) / 360f to Yellow400,
+                                                (135f + normalizedDegree + 1f) / 360f to Transparent
                                             ),
                                             startAngle = 135f - 90f,
                                             sweepAngle = normalizedDegree,
@@ -635,12 +635,12 @@ fun DialExample9() {
                                     if (normalizedDegree > 0) {
                                         drawArc(
                                             brush = Brush.sweepGradient(
-                                                135f / 360f to Color(0xFFFF936F),
+                                                135f / 360f to Orange400,
                                                 (135f + normalizedDegree * 0.5f) / 360f to Color(
                                                     0xFFFFA76F
                                                 ),
-                                                (135f + normalizedDegree) / 360f to Color(0xFFFFE788),
-                                                (135f + normalizedDegree + 1f) / 360f to Color.Transparent
+                                                (135f + normalizedDegree) / 360f to Yellow300,
+                                                (135f + normalizedDegree + 1f) / 360f to Transparent
                                             ),
                                             startAngle = 135f - 90f,
                                             sweepAngle = normalizedDegree,
@@ -660,7 +660,7 @@ fun DialExample9() {
                                 .fillMaxSize()
                                 .padding(20.dp)
                                 .background(
-                                    color = Color.Black,
+                                    color = Black,
                                     shape = CircleShape,
                                 )
                         )
@@ -679,7 +679,7 @@ fun DialExample9() {
                     ) {
                         Text(
                             "off",
-                            color = Color(0xFF4A4A4A),
+                            color = Gray600,
                             fontSize = 16.sp,
                             modifier = Modifier.align(Alignment.CenterEnd)
                         )

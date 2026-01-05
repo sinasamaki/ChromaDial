@@ -37,14 +37,10 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-//import theme.Sky500
-//import theme.Zinc200
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 
-val Sky500 = Color.Blue
-val Zinc200 = Color.White
 
 enum class RadiusMode {
     WIDTH,
