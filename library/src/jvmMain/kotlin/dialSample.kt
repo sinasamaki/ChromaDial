@@ -1,7 +1,6 @@
 package com.sinasamaki.chroma.dial
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +25,9 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -40,8 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
 import androidx.compose.ui.zIndex
-import kotlin.math.PI
-import kotlin.math.atan2
 
 fun main() = singleWindowApplication {
 
@@ -149,25 +143,6 @@ fun DialExample2() {
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            val path = Path().apply {
-                                addArc(
-                                    oval = Rect(
-                                        offset = Offset(
-                                            32.dp.toPx() / 2,
-                                            32.dp.toPx() / 2,
-                                        ),
-                                        size = Size(
-                                            width = (it.radius * 2) - 32.dp.toPx(),
-                                            height = (it.radius * 2) - 32.dp.toPx(),
-                                        )
-                                    ),
-                                    startAngleDegrees = it.degreeRange.start - 90f,
-                                    sweepAngleDegrees = it.degreeRange.endInclusive - it.degreeRange.start,
-                                )
-                            }
-                            val measure = PathMeasure().apply {
-                                setPath(path, false)
-                            }
                             drawArc(
                                 color = Zinc700,
                                 startAngle = it.degreeRange.start - 90f,
@@ -202,37 +177,28 @@ fun DialExample2() {
                                 )
                             )
 
-                            drawPath(
-                                path = path,
-                                color = Green500,
-                                style = Stroke(width = 1f)
-                            )
-
-                            for (i in 0..80) {
-                                val progress = i / 80f
-                                val distance = progress * measure.length
-                                val pos = measure.getPosition(distance)
-                                val tangent = measure.getTangent(distance)
-                                val degrees = atan2(tangent.y, tangent.x) * 180f / PI.toFloat()
-
+                            drawEveryStep(
+                                dialState = it,
+                                steps = 80,
+                                padding = (-16).dp,
+                            ) { position, degrees, inActiveRange ->
                                 drawCircle(
                                     color = Green500,
                                     radius = 1f,
-                                    center = pos,
+                                    center = position,
                                 )
 
                                 rotate(
                                     degrees = degrees,
-                                    pivot = pos,
+                                    pivot = position,
                                 ) {
                                     drawLine(
-                                        color = Green500,
-                                        start = pos + Offset(0f, 20f),
-                                        end = pos - Offset(0f, 20f)
+                                        color = if (inActiveRange) Green500 else Zinc700,
+                                        start = position + Offset(0f, 20f),
+                                        end = position - Offset(0f, 20f)
                                     )
                                 }
                             }
-
                         }
                 )
             }
@@ -671,10 +637,7 @@ fun DialExample9() {
                 if (degree <= 135f + 5f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .drawBehind {
-                                val textSize = 24.sp.toPx()
-                            },
+                            .fillMaxSize(),
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         Text(
