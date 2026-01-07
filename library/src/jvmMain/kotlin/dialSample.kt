@@ -26,11 +26,11 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -292,7 +292,7 @@ fun DialExample4() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "With 8 Steps",
+            "Camera Dial",
             color = White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
@@ -303,12 +303,11 @@ fun DialExample4() {
             onDegreeChanged = { degree = it },
             modifier = Modifier.size(200.dp),
             startDegrees = 0f,
-            sweepDegrees = 360f,
-            steps = 8,
+            sweepDegrees = 180f,
+            steps = 10,
             thumb = {
                 Box(
-                    Modifier.size(40.dp)
-                        .background(color = Yellow400, shape = CircleShape)
+                    Modifier.fillMaxSize()
                 )
             },
             track = {
@@ -316,11 +315,50 @@ fun DialExample4() {
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            drawCircle(
-                                color = Yellow400.copy(alpha = .2f),
-                                style = Stroke(width = 40.dp.toPx()),
-                                radius = (size.width / 2) - 20.dp.toPx()
-                            )
+//                            drawCircle(
+//                                color = Yellow400.copy(alpha = .2f),
+//                                style = Stroke(width = 40.dp.toPx()),
+//                                radius = (size.width / 2) - 20.dp.toPx()
+//                            )
+                            drawEveryStep(
+                                degreeRange = -90f..90f,
+                                steps = 45,
+                                radius = it.radius,
+                            ) { position, degrees, _ ->
+                                rotate(
+                                    degrees,
+                                    pivot = position
+                                ) {
+                                    drawLine(
+                                        color = White,
+                                        start = position,
+                                        end = position + Offset(0f, if (degrees in (-1f)..(1f)) 30f else 10f)
+                                    )
+                                }
+                            }
+
+                            rotate(
+                                it.degree
+                            ) {
+                                inset(60f) {
+                                    drawEveryStep(
+                                        degreeRange = -180f..0f,
+                                        steps = 10,
+                                        radius = it.radius - 60f,
+                                    ) { position, degrees, _ ->
+                                        rotate(
+                                            degrees,
+                                            pivot = position
+                                        ) {
+                                            drawCircle(
+                                                color = White,
+                                                radius = 10f,
+                                                center = position,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                 )
             }
