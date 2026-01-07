@@ -1,6 +1,7 @@
 package com.sinasamaki.chroma.dial
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -115,7 +117,8 @@ fun DialExample2() {
             "Semi-Circle Arc",
             color = White,
             fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            fontFamily = FontFamily.Monospace,
         )
         var degree by remember { mutableFloatStateOf(360f) }
         Dial(
@@ -133,8 +136,23 @@ fun DialExample2() {
                     modifier = Modifier
                         .size(32.dp)
                         .background(
-                            color = Fuchsia500,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Zinc950,
+                                    Green950,
+                                )
+                            ),
                             shape = CircleShape,
+                        )
+                        .border(
+                            width = 1.dp,
+                            shape = CircleShape,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Green400,
+                                    Green800,
+                                )
+                            )
                         )
                 )
             },
@@ -143,48 +161,48 @@ fun DialExample2() {
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            drawArc(
-                                color = Zinc700,
-                                startAngle = it.degreeRange.start - 90f,
-                                sweepAngle = it.degreeRange.endInclusive - it.degreeRange.start,
-                                topLeft = Offset(
-                                    32.dp.toPx() / 2,
-                                    32.dp.toPx() / 2,
-                                ),
-                                size = Size(
-                                    width = (it.radius * 2) - 32.dp.toPx(),
-                                    height = (it.radius * 2) - 32.dp.toPx(),
-                                ),
-                                useCenter = false,
-                                style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Butt)
-                            )
-                            drawArc(
-                                color = Fuchsia500.copy(alpha = .6f),
-                                startAngle = it.degreeRange.start - 90f,
-                                sweepAngle = it.degree - it.degreeRange.start,
-                                topLeft = Offset(
-                                    32.dp.toPx() / 2,
-                                    32.dp.toPx() / 2,
-                                ),
-                                size = Size(
-                                    width = (it.radius * 2) - 32.dp.toPx(),
-                                    height = (it.radius * 2) - 32.dp.toPx(),
-                                ),
-                                useCenter = false,
-                                style = Stroke(
-                                    width = 32.dp.toPx(),
-                                    cap = StrokeCap.Butt,
-                                )
-                            )
+//                            drawArc(
+//                                color = Zinc700,
+//                                startAngle = it.degreeRange.start - 90f,
+//                                sweepAngle = it.degreeRange.endInclusive - it.degreeRange.start,
+//                                topLeft = Offset(
+//                                    32.dp.toPx() / 2,
+//                                    32.dp.toPx() / 2,
+//                                ),
+//                                size = Size(
+//                                    width = (it.radius * 2) - 32.dp.toPx(),
+//                                    height = (it.radius * 2) - 32.dp.toPx(),
+//                                ),
+//                                useCenter = false,
+//                                style = Stroke(width = 32.dp.toPx(), cap = StrokeCap.Butt)
+//                            )
+//                            drawArc(
+//                                color = Fuchsia500.copy(alpha = .6f),
+//                                startAngle = it.degreeRange.start - 90f,
+//                                sweepAngle = it.degree - it.degreeRange.start,
+//                                topLeft = Offset(
+//                                    32.dp.toPx() / 2,
+//                                    32.dp.toPx() / 2,
+//                                ),
+//                                size = Size(
+//                                    width = (it.radius * 2) - 32.dp.toPx(),
+//                                    height = (it.radius * 2) - 32.dp.toPx(),
+//                                ),
+//                                useCenter = false,
+//                                style = Stroke(
+//                                    width = 32.dp.toPx(),
+//                                    cap = StrokeCap.Butt,
+//                                )
+//                            )
 
                             drawEveryStep(
                                 dialState = it,
-                                steps = 80,
-                                padding = (-16).dp,
+                                steps = 50,
+                                padding = (16).dp,
                             ) { position, degrees, inActiveRange ->
                                 drawCircle(
-                                    color = Green500,
-                                    radius = 1f,
+                                    color = Zinc800,
+                                    radius = 2f,
                                     center = position,
                                 )
 
@@ -193,14 +211,31 @@ fun DialExample2() {
                                     pivot = position,
                                 ) {
                                     drawLine(
-                                        color = if (inActiveRange) Green500 else Zinc700,
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                if (inActiveRange) Yellow200 else Zinc700,
+                                                if (inActiveRange) Green500 else Zinc800,
+                                                if (inActiveRange) Yellow200 else Zinc700,
+                                            ),
+                                            startY = position.y + 20f,
+                                            endY = position.y - 20f,
+                                        ),
                                         start = position + Offset(0f, 20f),
-                                        end = position - Offset(0f, 20f)
+                                        end = position - Offset(0f, 20f),
+                                        strokeWidth = 1.dp.toPx()
                                     )
                                 }
                             }
                         }
-                )
+                ) {
+                    Text(
+                        text = "${(it.value * 100).toInt()}",
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        color = Green400,
+                        fontSize = 32.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
             }
         )
     }

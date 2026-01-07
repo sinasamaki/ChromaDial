@@ -363,7 +363,8 @@ private fun Dial(
                             }
                         )
                     }
-                    .border(0.dp, Color.Blue),
+//                    .border(0.dp, Color.Blue)
+                ,
                 content = { }
             )
         }
