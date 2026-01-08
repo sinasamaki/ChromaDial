@@ -1,5 +1,8 @@
 package com.sinasamaki.chroma.dial
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +16,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.BrowseGallery
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.ModeNight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -25,13 +34,16 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -298,12 +310,19 @@ fun DialExample4() {
             fontWeight = FontWeight.Medium
         )
         var degree by remember { mutableFloatStateOf(0f) }
+        val animatedDegree by animateFloatAsState(
+            targetValue = degree,
+            animationSpec = spring(
+                stiffness = Spring.StiffnessHigh,
+                dampingRatio = Spring.DampingRatioLowBouncy,
+            )
+        )
         Dial(
-            degree = degree,
+            degree = animatedDegree,
             onDegreeChanged = { degree = it },
             modifier = Modifier.size(200.dp),
-            startDegrees = 0f,
-            sweepDegrees = 180f,
+            startDegrees = -90f,
+            sweepDegrees = 220f,
             steps = 10,
             thumb = {
                 Box(
@@ -321,7 +340,7 @@ fun DialExample4() {
 //                                radius = (size.width / 2) - 20.dp.toPx()
 //                            )
                             drawEveryStep(
-                                degreeRange = -90f..90f,
+                                degreeRange = -180f..0f,
                                 steps = 45,
                                 radius = it.radius,
                             ) { position, degrees, _ ->
@@ -332,35 +351,150 @@ fun DialExample4() {
                                     drawLine(
                                         color = White,
                                         start = position,
-                                        end = position + Offset(0f, if (degrees in (-1f)..(1f)) 30f else 10f)
+                                        end = position + Offset(0f, if (degrees in (-91f)..(-89f)) 30f else 10f)
                                     )
                                 }
                             }
 
-                            rotate(
-                                it.degree
-                            ) {
-                                inset(60f) {
-                                    drawEveryStep(
-                                        degreeRange = -180f..0f,
-                                        steps = 10,
-                                        radius = it.radius - 60f,
-                                    ) { position, degrees, _ ->
-                                        rotate(
-                                            degrees,
-                                            pivot = position
-                                        ) {
-                                            drawCircle(
-                                                color = White,
-                                                radius = 10f,
-                                                center = position,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+//                            rotate(
+//                                it.degree
+//                            ) {
+//                                inset(60f) {
+//                                    drawEveryStep(
+//                                        degreeRange = -180f..0f,
+//                                        steps = 10,
+//                                        radius = it.radius - 60f,
+//                                    ) { position, degrees, _ ->
+//                                        rotate(
+//                                            degrees,
+//                                            pivot = position
+//                                        ) {
+//                                            drawCircle(
+//                                                color = White,
+//                                                radius = 10f,
+//                                                center = position,
+//                                            )
+//                                        }
+//                                    }
+//                                }
+//                            }
                         }
                 )
+                StepContent(
+                    modifier = Modifier
+                        .graphicsLayer {
+                            rotationZ = it.degree
+                        }
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    degreeRange = -220f..0f,
+//                    radius = it.radius,
+                    steps = 10,
+                ) { index, position, degree, _ ->
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer {
+                                transformOrigin = TransformOrigin(
+                                    0f, .5f
+                                )
+//                                rotationZ = degree
+                            }
+                            .background(
+                                color = if (index == 4) Red500 else Transparent,
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = when (index) {
+                                    0 -> Green500
+                                    4 -> Red400
+                                    else -> White
+                                },
+//                                shape = CircleShape,
+                            )
+                            .padding(2.dp)
+                    ) {
+                        when (index) {
+                            0 -> Text(
+                                text = "Auto",
+                                fontSize = 8.sp,
+                                color = Green500,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            1 -> Text(
+                                text = "P",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            2 -> Text(
+                                text = "A",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            3 -> Text(
+                                text = "S",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            4 -> Text(
+                                text = "M",
+                                fontSize = 10.sp,
+                                color = Black,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            5 -> Icon(
+                                imageVector = Icons.Default.Api,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            6 -> Icon(
+                                imageVector = Icons.Default.BrowseGallery,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            7 -> Text(
+                                text = "B",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            8 -> Text(
+                                text = "C",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            9 -> Icon(
+                                imageVector = Icons.Default.ModeNight,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            10 -> Text(
+                                text = "Video",
+                                fontSize = 8.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            11 -> Icon(
+                                imageVector = Icons.Default.Face,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            else -> Text(
+                                text = "$index",
+                                fontSize = 10.sp,
+                                color = White,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                        }
+                    }
+                }
             }
         )
     }
