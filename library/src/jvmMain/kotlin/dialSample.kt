@@ -603,8 +603,17 @@ fun DialExample6() {
             )
         )
 
+        val totalMinutes = (degree.absoluteValue / 6).toInt()
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+
         Text(
-            text = "${(degree.absoluteValue / 6).toInt()} min",
+            text = if (totalMinutes < 60) {
+                "$totalMinutes min"
+            } else {
+                val hourText = if (hours == 1) "hr" else "hrs"
+                "$hours $hourText $minutes min"
+            },
             modifier = Modifier.padding(12.dp),
             fontSize = 28.sp,
             color = Zinc800,
@@ -615,9 +624,9 @@ fun DialExample6() {
             degree = animatedDegree,
             onDegreeChanged = { degree = it },
             modifier = Modifier.size(300.dp),
-            startDegrees = -360f * 1,
-            sweepDegrees = 360f * 1,
-            steps = 59 * 1,
+            startDegrees = -360f * 4,
+            sweepDegrees = 360f * 4,
+            steps = (60 * 4) - 1,
             thumb = {
                 Box(
                     Modifier.fillMaxSize()
@@ -638,6 +647,18 @@ fun DialExample6() {
                                 center = center,
                                 radius = (size.width / 2) - (strokeWidth / 2).toPx(),
                             )
+
+                            val numRings = (it.degree.absoluteValue / 360).toInt()
+                            val baseRadius = (size.width / 2)
+                            val ringSpacing = 3.dp.toPx()
+
+                            for (i in 0 until numRings) {
+                                drawCircle(
+                                    color = Red500,
+                                    radius = baseRadius + (i + 1) * ringSpacing,
+                                    style = Stroke(width = 2.dp.toPx())
+                                )
+                            }
                             drawArc(
                                 brush = Brush.radialGradient(
                                     colors = listOf(
@@ -646,7 +667,7 @@ fun DialExample6() {
                                     )
                                 ),
                                 startAngle = -90f,
-                                sweepAngle = it.degree,
+                                sweepAngle = it.degree % 360f,
                                 topLeft = rect.topLeft,
                                 size = rect.size,
                                 useCenter = false,
