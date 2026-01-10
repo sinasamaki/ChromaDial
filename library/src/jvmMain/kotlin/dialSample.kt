@@ -99,6 +99,9 @@ fun main() = singleWindowApplication {
             item {
                 DialExample9()
             }
+            item {
+                DialExample10()
+            }
         }
     }
 
@@ -1044,5 +1047,120 @@ fun DialExample9() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun DialExample10() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Angle Indicator",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(45f) }
+
+        Dial(
+            degree = degree,
+            onDegreeChanged = { degree = it },
+            modifier = Modifier.size(200.dp),
+            startDegrees = 0f,
+            sweepDegrees = 360f,
+            thumb = {
+                Box(Modifier.fillMaxSize())
+            },
+            track = {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            val radius = it.radius
+                            val centerPoint = center
+
+                            // Draw arc at shorter radius (0 to current degree) with fill
+                            val arcRadius = radius * 0.3f
+                            drawArc(
+                                color = Blue500.copy(alpha = 0.2f),
+                                startAngle = -90f,
+                                sweepAngle = it.degree,
+                                topLeft = Offset(
+                                    centerPoint.x - arcRadius,
+                                    centerPoint.y - arcRadius
+                                ),
+                                size = androidx.compose.ui.geometry.Size(arcRadius * 2, arcRadius * 2),
+                                useCenter = true,
+                                style = androidx.compose.ui.graphics.drawscope.Fill
+                            )
+
+                            // Draw arc stroke
+                            drawArc(
+                                color = Blue500,
+                                startAngle = -90f,
+                                sweepAngle = it.degree,
+                                topLeft = Offset(
+                                    centerPoint.x - arcRadius,
+                                    centerPoint.y - arcRadius
+                                ),
+                                size = androidx.compose.ui.geometry.Size(arcRadius * 2, arcRadius * 2),
+                                useCenter = false,
+                                style = Stroke(width = 2.dp.toPx())
+                            )
+
+                            // Line at 0 degrees (pointing up)
+                            rotate(degrees = 0f, pivot = centerPoint) {
+                                drawLine(
+                                    color = Orange500,
+                                    start = centerPoint,
+                                    end = centerPoint + Offset(0f, -radius),
+                                    strokeWidth = 3.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
+
+                            // Line at current degrees
+                            rotate(degrees = it.degree, pivot = centerPoint) {
+                                drawLine(
+                                    color = Orange500,
+                                    start = centerPoint,
+                                    end = centerPoint + Offset(0f, -radius),
+                                    strokeWidth = 3.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                )
+
+                // Position text at midpoint angle or after current degree if too low
+                val textAngle = if (it.degree < 30f) {
+                    it.degree + 15f
+                } else {
+                    it.degree / 2f
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            rotationZ = textAngle
+                        }
+                        .padding(30.dp)
+                ) {
+                    Text(
+                        text = "${it.degree.toInt()}°",
+                        color = White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .rotate(-textAngle)
+                    )
+                }
+            }
+        )
     }
 }
