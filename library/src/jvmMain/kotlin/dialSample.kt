@@ -38,21 +38,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -62,7 +57,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
-import androidx.compose.ui.zIndex
 import kotlin.math.absoluteValue
 
 fun main() = singleWindowApplication {
@@ -79,68 +73,28 @@ fun main() = singleWindowApplication {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
-                DialExample1()
+                ProgressGaugeDial()
             }
             item {
-                DialExample2()
+                CameraModeDial()
             }
             item {
-                DialExample3()
+                TimerDial()
             }
             item {
-                DialExample4()
+                AngleIndicatorDial()
             }
             item {
-                DialExample5()
-            }
-            item {
-                DialExample6()
-            }
-            item {
-                DialExample7()
-            }
-            item {
-                DialExample8()
-            }
-            item {
-                DialExample9()
-            }
-            item {
-                DialExample10()
-            }
-            item {
-                DialExample11()
+                NutritionGoalDial()
             }
         }
     }
 
 }
 
-@Composable
-fun DialExample1() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Full Circle",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(0f) }
-        Dial(
-            degree = degree,
-            onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 0f,
-            sweepDegrees = 360f
-        )
-    }
-}
 
 @Composable
-fun DialExample2() {
+fun ProgressGaugeDial() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -274,51 +228,7 @@ fun DialExample2() {
 }
 
 @Composable
-fun DialExample3() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Quarter Circle - Cyan",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(0f) }
-        Dial(
-            degree = degree,
-            onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 0f,
-            sweepDegrees = 90f,
-            thumb = {
-                Box(
-                    Modifier.size(48.dp)
-                        .background(color = Cyan500, shape = CircleShape)
-                )
-            },
-            track = {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawArc(
-                                color = Cyan500.copy(alpha = .3f),
-                                startAngle = 0f - 90f,
-                                sweepAngle = 90f,
-                                useCenter = false,
-                                style = Stroke(width = 48.dp.toPx())
-                            )
-                        }
-                )
-            }
-        )
-    }
-}
-
-@Composable
-fun DialExample4() {
+fun CameraModeDial() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -536,61 +446,7 @@ fun DialExample4() {
 }
 
 @Composable
-fun DialExample5() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Gradient Track",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(45f) }
-        Dial(
-            degree = degree,
-            onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 0f,
-            sweepDegrees = 360f,
-            thumb = {
-                Box(
-                    Modifier.size(56.dp)
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(Fuchsia500, Pink500)
-                            ),
-                            shape = CircleShape
-                        )
-                )
-            },
-            track = {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawCircle(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        Fuchsia500.copy(alpha = .3f),
-                                        Cyan500.copy(alpha = .3f),
-                                        Yellow400.copy(alpha = .3f),
-                                        Fuchsia500.copy(alpha = .3f)
-                                    )
-                                ),
-                                style = Stroke(width = 56.dp.toPx()),
-                                radius = (size.width / 2) - 28.dp.toPx()
-                            )
-                        }
-                )
-            }
-        )
-    }
-}
-
-@Composable
-fun DialExample6() {
+fun TimerDial() {
     Column(
         modifier = Modifier
             .background(
@@ -796,271 +652,7 @@ fun DialExample6() {
 }
 
 @Composable
-fun DialExample7() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Large Square Thumb",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(180f) }
-        Dial(
-            degree = degree,
-            onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 0f,
-            sweepDegrees = 360f,
-            thumb = {
-                Box(
-                    Modifier.size(60.dp)
-                        .background(
-                            color = Orange500,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                )
-            },
-            track = {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawCircle(
-                                color = Orange500.copy(alpha = .2f),
-                                style = Stroke(width = 60.dp.toPx()),
-                                radius = (size.width / 2) - 30.dp.toPx()
-                            )
-                        }
-                )
-            }
-        )
-    }
-}
-
-@Composable
-fun DialExample8() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "3/4 Arc - Purple",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(225f) }
-        Dial(
-            degree = degree,
-            onDegreeChanged = { degree = it },
-            modifier = Modifier.size(200.dp),
-            startDegrees = 135f,
-            sweepDegrees = 270f,
-            steps = 5,
-            thumb = {
-                Box(
-                    Modifier.size(44.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Purple400, Purple600)
-                            ),
-                            shape = CircleShape
-                        )
-                )
-            },
-            track = {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        Purple400.copy(alpha = .3f),
-                                        Purple600.copy(alpha = .3f),
-                                        Purple400.copy(alpha = .3f)
-                                    )
-                                ),
-                                startAngle = 135f - 90f,
-                                sweepAngle = 270f,
-                                useCenter = false,
-                                style = Stroke(width = 44.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
-                )
-            }
-        )
-    }
-}
-
-@Composable
-fun DialExample9() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            "Gradient Arc - Dark Theme",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        var degree by remember { mutableFloatStateOf(135f) }
-
-        Box(
-            modifier = Modifier
-                .size(280.dp)
-                .background(
-                    color = Zinc900,
-                    shape = RoundedCornerShape(48.dp)
-                )
-                .drawBehind {
-                    // Subtle shadow effect
-                    drawRoundRect(
-                        color = Black.copy(alpha = 0.3f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(48.dp.toPx())
-                    )
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Box(modifier = Modifier.size(200.dp)) {
-                Dial(
-                    degree = degree,
-                    onDegreeChanged = { degree = it },
-                    modifier = Modifier.fillMaxSize(),
-                    startDegrees = 135f,
-                    sweepDegrees = 270f,
-                    thumb = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-//                                .size(64.dp)
-                            contentAlignment = Alignment.TopCenter,
-                        ) {
-                            Box(
-                                Modifier
-                                    .zIndex(200f)
-                                    .size(16.dp)
-                                    .background(
-                                        color = White,
-                                        shape = CircleShape
-                                    )
-                            )
-                        }
-                    },
-                    track = {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .blur(
-                                    radius = 15.dp,
-                                    edgeTreatment = BlurredEdgeTreatment.Unbounded
-                                )
-                                .drawBehind {
-                                    val strokeWidth = 20.dp.toPx()
-
-                                    // Calculate active arc sweep
-                                    val normalizedDegree = (degree - 135f).coerceIn(0f, 270f)
-
-                                    // Active gradient arc
-                                    if (normalizedDegree > 0) {
-                                        drawArc(
-                                            brush = Brush.sweepGradient(
-                                                135f / 360f to Orange500,
-                                                (135f + normalizedDegree * 0.5f) / 360f to Color(
-                                                    0xFFFF8C42
-                                                ),
-                                                (135f + normalizedDegree) / 360f to Yellow400,
-                                                (135f + normalizedDegree + 1f) / 360f to Transparent
-                                            ),
-                                            startAngle = 135f - 90f,
-                                            sweepAngle = normalizedDegree,
-                                            useCenter = false,
-                                            style = Stroke(
-                                                width = strokeWidth,
-                                                cap = StrokeCap.Round
-                                            )
-                                        )
-                                    }
-                                }
-                        )
-
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .blur(
-                                    radius = 1.dp,
-                                    edgeTreatment = BlurredEdgeTreatment.Unbounded
-                                )
-                                .drawBehind {
-                                    val strokeWidth = 2.dp.toPx()
-
-                                    // Calculate active arc sweep
-                                    val normalizedDegree = (degree - 135f).coerceIn(0f, 270f)
-
-                                    // Active gradient arc
-                                    if (normalizedDegree > 0) {
-                                        drawArc(
-                                            brush = Brush.sweepGradient(
-                                                135f / 360f to Orange400,
-                                                (135f + normalizedDegree * 0.5f) / 360f to Color(
-                                                    0xFFFFA76F
-                                                ),
-                                                (135f + normalizedDegree) / 360f to Yellow300,
-                                                (135f + normalizedDegree + 1f) / 360f to Transparent
-                                            ),
-                                            startAngle = 135f - 90f,
-                                            sweepAngle = normalizedDegree,
-                                            useCenter = false,
-                                            style = Stroke(
-                                                width = strokeWidth,
-                                                cap = StrokeCap.Round
-                                            )
-                                        )
-                                    }
-                                }
-                        )
-
-
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .padding(20.dp)
-                                .background(
-                                    color = Black,
-                                    shape = CircleShape,
-                                )
-                        )
-                    }
-                )
-
-                // "off" text indicator when at minimum
-                if (degree <= 135f + 5f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Text(
-                            "off",
-                            color = Gray600,
-                            fontSize = 16.sp,
-                            modifier = Modifier.align(Alignment.CenterEnd)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DialExample10() {
+fun AngleIndicatorDial() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1100,7 +692,10 @@ fun DialExample10() {
                                     centerPoint.x - arcRadius,
                                     centerPoint.y - arcRadius
                                 ),
-                                size = androidx.compose.ui.geometry.Size(arcRadius * 2, arcRadius * 2),
+                                size = androidx.compose.ui.geometry.Size(
+                                    arcRadius * 2,
+                                    arcRadius * 2
+                                ),
                                 useCenter = true,
                                 style = androidx.compose.ui.graphics.drawscope.Fill
                             )
@@ -1114,7 +709,10 @@ fun DialExample10() {
                                     centerPoint.x - arcRadius,
                                     centerPoint.y - arcRadius
                                 ),
-                                size = androidx.compose.ui.geometry.Size(arcRadius * 2, arcRadius * 2),
+                                size = androidx.compose.ui.geometry.Size(
+                                    arcRadius * 2,
+                                    arcRadius * 2
+                                ),
                                 useCenter = false,
                                 style = Stroke(width = 2.dp.toPx())
                             )
@@ -1175,7 +773,7 @@ fun DialExample10() {
 }
 
 @Composable
-fun DialExample11() {
+fun NutritionGoalDial() {
     Column(
         modifier = Modifier
             .background(
@@ -1256,7 +854,10 @@ fun DialExample11() {
                                             height = (size.width - strokeWidth)
                                         ),
                                         useCenter = false,
-                                        style = Stroke(width = strokeWidth + 10f, cap = StrokeCap.Round)
+                                        style = Stroke(
+                                            width = strokeWidth + 10f,
+                                            cap = StrokeCap.Round
+                                        )
                                     )
                                     drawArc(
                                         brush = Brush.sweepGradient(
@@ -1333,7 +934,10 @@ fun DialExample11() {
                                             height = (size.width - strokeWidth)
                                         ),
                                         useCenter = false,
-                                        style = Stroke(width = strokeWidth + 10f, cap = StrokeCap.Round)
+                                        style = Stroke(
+                                            width = strokeWidth + 10f,
+                                            cap = StrokeCap.Round
+                                        )
                                     )
                                     drawArc(
                                         brush = Brush.sweepGradient(
@@ -1410,7 +1014,10 @@ fun DialExample11() {
                                             height = (size.width - strokeWidth)
                                         ),
                                         useCenter = false,
-                                        style = Stroke(width = strokeWidth + 10f, cap = StrokeCap.Round)
+                                        style = Stroke(
+                                            width = strokeWidth + 10f,
+                                            cap = StrokeCap.Round
+                                        )
                                     )
                                     drawArc(
                                         brush = Brush.sweepGradient(
