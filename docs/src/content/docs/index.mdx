@@ -1,40 +1,48 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: ChromaDial
+description: A customizable circular dial/knob component for Compose Multiplatform.
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+  tagline: Beautiful, customizable circular dial components for Compose Multiplatform
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Get Started
+      link: /guides/introduction/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: View on GitHub
+      link: https://github.com/sinasamaki/ChromaDial
       icon: external
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
+## Features
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+	<Card title="Full Customization" icon="pencil">
+		Customize both the thumb and track with your own composables. Create unique dial designs for any use case.
 	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
+	<Card title="Flexible Arcs" icon="setting">
+		Support for full circles, semi-circles, or any arc range you need. Define start and sweep angles easily.
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="Step Snapping" icon="list-format">
+		Enable discrete step values for precise selection. Perfect for settings, timers, and mode selectors.
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="Multiplatform" icon="rocket">
+		Built with Compose Multiplatform - works on Android, iOS, Desktop, and Web.
 	</Card>
 </CardGrid>
+
+## Quick Example
+
+```kotlin
+var degree by remember { mutableFloatStateOf(180f) }
+
+Dial(
+    degree = degree,
+    onDegreeChanged = { degree = it },
+    modifier = Modifier.size(200.dp),
+    startDegrees = 0f,
+    sweepDegrees = 360f,
+)
+```
