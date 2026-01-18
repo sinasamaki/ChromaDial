@@ -1,0 +1,304 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=League+Spartan:wght@300;400;500;600;700&display=swap');
+
+/* Force dark mode with fuchsia accent */
+:root {
+	--sl-color-accent-low: #4a044e;
+	--sl-color-accent: #d946ef;
+	--sl-color-accent-high: #f0abfc;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e5e5e5;
+	--sl-color-gray-2: #a3a3a3;
+	--sl-color-gray-3: #737373;
+	--sl-color-gray-4: #404040;
+	--sl-color-gray-5: #262626;
+	--sl-color-gray-6: #171717;
+	--sl-color-black: #0c0c0c;
+
+	/* Fuchsia colors */
+	--fuchsia-400: #e879f9;
+	--fuchsia-500: #d946ef;
+	--fuchsia-600: #c026d3;
+	--fuchsia-700: #a21caf;
+
+	/* Typography */
+	--sl-font: 'League Spartan', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Force dark theme colors */
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+	--sl-color-bg: #0c0c0c;
+	--sl-color-bg-nav: #0c0c0c;
+	--sl-color-bg-sidebar: #0c0c0c;
+	--sl-color-bg-inline-code: #1a1a1a;
+	--sl-color-hairline-light: #262626;
+	--sl-color-hairline: #333333;
+	--sl-color-text: #e5e5e5;
+	--sl-color-text-accent: #f0abfc;
+}
+
+/* Background overrides */
+html,
+body {
+	background-color: #0c0c0c;
+}
+
+.sl-markdown-content {
+	background-color: transparent;
+}
+
+/* Code blocks styling */
+pre {
+	font-family: var(--sl-font-mono) !important;
+	background-color: #141414 !important;
+	border: 1px solid #262626;
+	border-radius: 8px;
+}
+
+code {
+	font-family: var(--sl-font-mono) !important;
+}
+
+/* Inline code */
+:not(pre) > code {
+	background-color: #1a1a1a;
+	padding: 0.15em 0.4em;
+	border-radius: 4px;
+	border: 1px solid #262626;
+}
+
+/* Sidebar background */
+.sidebar-pane {
+	background-color: #0c0c0c;
+}
+
+/* Hero section */
+.hero {
+	background-color: #0c0c0c;
+}
+
+/* Table styling */
+table {
+	background-color: transparent;
+}
+
+th {
+	background-color: #141414;
+}
+
+tr:nth-child(even) {
+	background-color: #111111;
+}
+
+/* ============================================
+   FEATURES SECTION - Complete Reset & Styles
+   ============================================ */
+
+.features-section {
+	--bento-gap: 16px;
+	--bento-padding: 20px;
+	--bento-radius: 16px;
+	margin: 2rem 0 3rem 0 !important;
+	padding: 0 !important;
+}
+
+.features-section h2 {
+	font-size: 1.5rem !important;
+	font-weight: 600 !important;
+	color: var(--sl-color-white) !important;
+	margin: 0 0 1.5rem 0 !important;
+	padding: 0 !important;
+}
+
+/* ============================================
+   BENTO GRID - Fresh Layout
+   ============================================ */
+
+.bento-grid {
+	display: grid !important;
+	grid-template-columns: repeat(4, 1fr) !important;
+	gap: var(--bento-gap) !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+	align-items: stretch !important;
+}
+
+/* Span classes */
+.bento-grid > .bento-card.span-2 {
+	grid-column: span 2 !important;
+}
+
+.bento-grid > .bento-card.span-row {
+	grid-row: span 2 !important;
+}
+
+/* Tablet: 2 columns */
+@media (max-width: 900px) {
+	.bento-grid {
+		grid-template-columns: repeat(2, 1fr) !important;
+	}
+
+	.bento-grid > .bento-card.span-2 {
+		grid-column: span 2 !important;
+	}
+
+	.bento-grid > .bento-card.span-row {
+		grid-row: span 1 !important;
+	}
+}
+
+/* Mobile: 1 column */
+@media (max-width: 640px) {
+	.bento-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	.bento-grid > .bento-card.span-2,
+	.bento-grid > .bento-card.span-row {
+		grid-column: span 1 !important;
+		grid-row: span 1 !important;
+	}
+}
+
+/* ============================================
+   BENTO CARD - Base Styles
+   ============================================ */
+
+.bento-grid > .bento-card {
+	--mouse-x: 50%;
+	--mouse-y: 50%;
+	--gradient-radius: 200px;
+	position: relative !important;
+	display: flex !important;
+	flex-direction: column !important;
+	padding: var(--bento-padding) !important;
+	margin: 0 !important;
+	border-radius: var(--bento-radius) !important;
+	background: #111111 !important;
+	border: none !important;
+	overflow: hidden !important;
+	isolation: isolate !important;
+	transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+.bento-grid > .bento-card:hover {
+	transform: translateY(-3px) !important;
+	box-shadow:
+		inset 0 0 0 1px rgba(217, 70, 239, 0.25),
+		0 4px 30px rgba(217, 70, 239, 0.15),
+		0 0 50px rgba(217, 70, 239, 0.05) !important;
+}
+
+/* Gradient border on hover */
+.bento-grid > .bento-card::before {
+	content: '' !important;
+	position: absolute !important;
+	inset: 0 !important;
+	border-radius: var(--bento-radius) !important;
+	padding: 1px !important;
+	background: radial-gradient(
+		var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
+		rgba(217, 70, 239, 0.6) 0%,
+		rgba(162, 28, 175, 0.3) 40%,
+		transparent 80%
+	) !important;
+	-webkit-mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0) !important;
+	-webkit-mask-composite: xor !important;
+	mask-composite: exclude !important;
+	pointer-events: none !important;
+	opacity: 0 !important;
+	transition: opacity 0.4s ease !important;
+}
+
+/* Inner glow */
+.bento-grid > .bento-card::after {
+	content: '' !important;
+	position: absolute !important;
+	inset: 1px !important;
+	border-radius: calc(var(--bento-radius) - 1px) !important;
+	background: radial-gradient(
+		var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
+		rgba(217, 70, 239, 0.12) 0%,
+		rgba(217, 70, 239, 0.06) 40%,
+		transparent 80%
+	) !important;
+	pointer-events: none !important;
+	opacity: 0 !important;
+	transition: opacity 0.4s ease !important;
+	z-index: 0 !important;
+}
+
+.bento-grid > .bento-card:hover::before,
+.bento-grid > .bento-card:hover::after {
+	opacity: 1 !important;
+}
+
+/* ============================================
+   BENTO CARD - Content Elements
+   ============================================ */
+
+.bento-grid > .bento-card .bento-card-icon {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 44px !important;
+	height: 44px !important;
+	border-radius: 12px !important;
+	background: linear-gradient(135deg, rgba(217, 70, 239, 0.2) 0%, rgba(162, 28, 175, 0.1) 100%) !important;
+	margin: 0 0 1rem 0 !important;
+	padding: 0 !important;
+	position: relative !important;
+	z-index: 1 !important;
+	flex-shrink: 0 !important;
+}
+
+.bento-grid > .bento-card .bento-card-icon svg {
+	width: 22px !important;
+	height: 22px !important;
+	color: #e879f9 !important;
+}
+
+.bento-grid > .bento-card h3 {
+	margin: 0 0 0.5rem 0 !important;
+	padding: 0 !important;
+	font-size: 1rem !important;
+	font-weight: 600 !important;
+	color: #ffffff !important;
+	position: relative !important;
+	z-index: 1 !important;
+	line-height: 1.3 !important;
+}
+
+.bento-grid > .bento-card p {
+	margin: 0 !important;
+	padding: 0 !important;
+	font-size: 0.875rem !important;
+	color: #a3a3a3 !important;
+	line-height: 1.55 !important;
+	position: relative !important;
+	z-index: 1 !important;
+}
+
+/* Larger card text */
+.bento-grid > .bento-card.span-2 h3 {
+	font-size: 1.1rem !important;
+}
+
+.bento-grid > .bento-card.span-2 p {
+	font-size: 0.9rem !important;
+}
+
+/* ============================================
+   Hide default Starlight card grid
+   ============================================ */
+
+.sl-markdown-content .card-grid {
+	display: none !important;
+}

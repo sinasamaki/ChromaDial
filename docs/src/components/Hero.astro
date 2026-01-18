@@ -1,0 +1,272 @@
+---
+import { Image } from 'astro:assets';
+
+const PAGE_TITLE_ID = '_top';
+const { data } = Astro.locals.starlightRoute.entry;
+const { title = data.title, tagline, image, actions = [] } = data.hero || {};
+
+const imageAttrs = {
+	loading: 'eager' as const,
+	decoding: 'async' as const,
+	width: 400,
+	height: 400,
+	alt: image?.alt || '',
+};
+
+let darkImage: ImageMetadata | undefined;
+let lightImage: ImageMetadata | undefined;
+let rawHtml: string | undefined;
+if (image) {
+	if ('file' in image) {
+		darkImage = image.file;
+	} else if ('dark' in image) {
+		darkImage = image.dark;
+		lightImage = image.light;
+	} else {
+		rawHtml = image.html;
+	}
+}
+---
+
+<div class="hero">
+	{
+		darkImage && (
+			<Image
+				src={darkImage}
+				{...imageAttrs}
+				class:list={{ 'light:sl-hidden': Boolean(lightImage) }}
+			/>
+		)
+	}
+	{lightImage && <Image src={lightImage} {...imageAttrs} class="dark:sl-hidden" />}
+	{rawHtml && <div class="hero-html sl-flex" set:html={rawHtml} />}
+	<div class="sl-flex stack">
+		<div class="sl-flex copy">
+			<h1 id={PAGE_TITLE_ID} data-page-title set:html={title} />
+			{tagline && <div class="tagline" set:html={tagline} />}
+		</div>
+		{
+			actions.length > 0 && (
+				<div class="sl-flex actions">
+					{actions.map(({ icon, link: href, text, variant }) => (
+						<div class={`action-wrapper ${variant || 'primary'}`}>
+							<a href={href} class={`action-link ${variant || 'primary'}`}>
+								<span>{text}</span>
+								{icon?.name === 'right-arrow' && (
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M5 12h14"></path>
+										<path d="m12 5 7 7-7 7"></path>
+									</svg>
+								)}
+								{icon?.name === 'external' && (
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+										<polyline points="15 3 21 3 21 9"></polyline>
+										<line x1="10" y1="14" x2="21" y2="3"></line>
+									</svg>
+								)}
+							</a>
+						</div>
+					))}
+				</div>
+			)
+		}
+	</div>
+</div>
+
+<style>
+	.hero {
+		display: grid;
+		align-items: center;
+		gap: 1rem;
+		padding-bottom: 1rem;
+	}
+
+	.hero > img,
+	.hero > .hero-html {
+		object-fit: contain;
+		width: min(70%, 20rem);
+		height: auto;
+		margin-inline: auto;
+	}
+
+	.stack {
+		flex-direction: column;
+		gap: clamp(1.5rem, calc(1.5rem + 1vw), 2rem);
+		text-align: center;
+	}
+
+	.copy {
+		flex-direction: column;
+		gap: 1rem;
+		align-items: center;
+	}
+
+	.copy > * {
+		max-width: 50ch;
+	}
+
+	h1 {
+		font-size: clamp(var(--sl-text-3xl), calc(0.25rem + 5vw), var(--sl-text-6xl));
+		line-height: var(--sl-line-height-headings);
+		font-weight: 600;
+		color: var(--sl-color-white);
+	}
+
+	.tagline {
+		font-size: clamp(var(--sl-text-base), calc(0.0625rem + 2vw), var(--sl-text-xl));
+		color: var(--sl-color-gray-2);
+	}
+
+	.actions {
+		gap: 1rem 2rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	@media (min-width: 50rem) {
+		.hero {
+			grid-template-columns: 7fr 4fr;
+			gap: 3%;
+			padding-block: clamp(2.5rem, calc(1rem + 10vmin), 10rem);
+		}
+
+		.hero > img,
+		.hero > .hero-html {
+			order: 2;
+			width: min(100%, 25rem);
+		}
+
+		.stack {
+			text-align: start;
+		}
+
+		.copy {
+			align-items: flex-start;
+		}
+
+		.actions {
+			justify-content: flex-start;
+		}
+	}
+
+	/* Primary button wrapper with glow effects */
+	.action-wrapper.primary {
+		--mouse-x: 50%;
+		--mouse-y: 50%;
+		--gradient-radius: 100px;
+		position: relative;
+		border-radius: 14px;
+		padding: 1px;
+		background: transparent;
+		isolation: isolate;
+	}
+
+	.action-wrapper.primary::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 14px;
+		padding: 1px;
+		background: radial-gradient(
+			var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
+			#d946ef 0%,
+			#a21caf 40%,
+			transparent 80%
+		);
+		-webkit-mask:
+			linear-gradient(#fff 0 0) content-box,
+			linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+		opacity: 0.6;
+		transition: opacity 0.3s ease;
+	}
+
+	.action-wrapper.primary::after {
+		content: '';
+		position: absolute;
+		inset: 1px;
+		border-radius: 13px;
+		background: radial-gradient(
+			var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
+			rgba(217, 70, 239, 0.25) 0%,
+			rgba(217, 70, 239, 0.1) 40%,
+			transparent 80%
+		);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		z-index: 1;
+	}
+
+	.action-wrapper.primary:hover::before {
+		opacity: 1;
+	}
+
+	.action-wrapper.primary:hover::after {
+		opacity: 1;
+	}
+
+	.action-wrapper.primary:hover {
+		box-shadow:
+			0 0 25px rgba(217, 70, 239, 0.4),
+			0 0 50px rgba(217, 70, 239, 0.2),
+			0 0 75px rgba(217, 70, 239, 0.1);
+	}
+
+	/* Static border */
+	.action-wrapper.primary {
+		box-shadow: inset 0 0 0 1px rgba(217, 70, 239, 0.4);
+	}
+
+	.action-link.primary {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border-radius: 13px;
+		background: rgba(217, 70, 239, 0.1);
+		color: #f0abfc;
+		font-weight: 600;
+		font-size: var(--sl-text-base);
+		text-decoration: none;
+		z-index: 2;
+		transition: all 0.3s ease;
+	}
+
+	.action-link.primary:hover {
+		color: #ffffff;
+		background: rgba(217, 70, 239, 0.15);
+	}
+
+	.action-link.primary svg {
+		flex-shrink: 0;
+	}
+
+	/* Minimal variant */
+	.action-wrapper.minimal {
+		background: transparent;
+	}
+
+	.action-link.minimal {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 0;
+		color: var(--sl-color-gray-2);
+		font-size: var(--sl-text-base);
+		text-decoration: none;
+		transition: color 0.3s ease;
+	}
+
+	.action-link.minimal:hover {
+		color: var(--sl-color-white);
+	}
+
+	.action-link.minimal svg {
+		flex-shrink: 0;
+	}
+</style>

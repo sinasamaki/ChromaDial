@@ -7,31 +7,115 @@ hero:
   actions:
     - text: Get Started
       link: /guides/introduction/
-      icon: right-arrow
+      icon:
+        name: right-arrow
     - text: View on GitHub
       link: https://github.com/sinasamaki/ChromaDial
-      icon: external
+      icon:
+        name: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+<section class="features-section">
+  <h2>Features</h2>
+  <div class="bento-grid">
+    <div class="bento-card span-2">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+          <path d="M2 2l7.586 7.586"></path>
+          <circle cx="11" cy="11" r="2"></circle>
+        </svg>
+      </div>
+      <h3>Full Customization</h3>
+      <p>Customize both the thumb and track with your own composables. Create volume knobs, timers, gauges, or any circular control you can imagine.</p>
+    </div>
 
-## Features
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6l4 2"></path>
+        </svg>
+      </div>
+      <h3>Flexible Arcs</h3>
+      <p>Full circles, semi-circles, or any arc range. Define start and sweep angles easily.</p>
+    </div>
 
-<CardGrid stagger>
-	<Card title="Full Customization" icon="pencil">
-		Customize both the thumb and track with your own composables. Create unique dial designs for any use case.
-	</Card>
-	<Card title="Flexible Arcs" icon="setting">
-		Support for full circles, semi-circles, or any arc range you need. Define start and sweep angles easily.
-	</Card>
-	<Card title="Step Snapping" icon="list-format">
-		Enable discrete step values for precise selection. Perfect for settings, timers, and mode selectors.
-	</Card>
-	<Card title="Multiplatform" icon="rocket">
-		Built with Compose Multiplatform - works on Android, iOS, Desktop, and Web.
-	</Card>
-</CardGrid>
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <h3>Step Snapping</h3>
+      <p>Discrete values for precise selection. Perfect for settings and mode selectors.</p>
+    </div>
+
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 20V10"></path>
+          <path d="M12 20V4"></path>
+          <path d="M6 20v-6"></path>
+        </svg>
+      </div>
+      <h3>Normalized Values</h3>
+      <p>Access 0-1 normalized values for easy integration with any scale or unit.</p>
+    </div>
+
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </div>
+      <h3>Interaction Source</h3>
+      <p>Track hover and drag states with MutableInteractionSource for rich feedback.</p>
+    </div>
+
+    <div class="bento-card span-2 span-row">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <h3>Multiplatform</h3>
+      <p>Built with Compose Multiplatform. Deploy to Android, iOS, Desktop (JVM), and Web from a single codebase. True write-once, run-anywhere circular controls.</p>
+    </div>
+
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
+      <h3>Draw Utilities</h3>
+      <p>Helper functions to draw tick marks, labels, and step indicators around your dial.</p>
+    </div>
+
+    <div class="bento-card">
+      <div class="bento-card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4"></path>
+          <path d="m6.34 6.34 2.83 2.83"></path>
+          <path d="M2 12h4"></path>
+          <path d="m6.34 17.66 2.83-2.83"></path>
+          <path d="M12 18v4"></path>
+          <path d="m17.66 17.66-2.83-2.83"></path>
+          <path d="M18 12h4"></path>
+          <path d="m17.66 6.34-2.83 2.83"></path>
+        </svg>
+      </div>
+      <h3>Overshot Tracking</h3>
+      <p>Know when users drag beyond limits for rubber-band effects and haptic feedback.</p>
+    </div>
+  </div>
+</section>
 
 ## Quick Example
 

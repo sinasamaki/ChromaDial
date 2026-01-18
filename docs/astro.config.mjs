@@ -7,6 +7,11 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'ChromaDial',
+			customCss: ['./src/styles/custom.css'],
+			components: {
+				ThemeSelect: './src/components/ThemeSelect.astro',
+				Hero: './src/components/Hero.astro',
+			},
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/sinasamaki/ChromaDial' }],
 			sidebar: [
 				{

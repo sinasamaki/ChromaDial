@@ -1,0 +1,56 @@
+---
+// Empty component to disable theme switching
+// Dark mode is forced via CSS
+---
+
+<script>
+	// Force dark theme on page load
+	document.documentElement.dataset.theme = 'dark';
+	localStorage.setItem('starlight-theme', 'dark');
+
+	// Mouse tracking for interactive elements
+	function initMouseTracking() {
+		const trackables = document.querySelectorAll('.bento-card, .action-wrapper.primary');
+
+		trackables.forEach(el => {
+			// Remove existing listeners to prevent duplicates
+			el.removeEventListener('mousemove', handleMouseMove);
+			el.addEventListener('mousemove', handleMouseMove);
+
+			// Set initial gradient radius based on element size
+			updateGradientRadius(el as HTMLElement);
+		});
+
+		// Update radius on resize
+		window.addEventListener('resize', () => {
+			trackables.forEach(el => updateGradientRadius(el as HTMLElement));
+		});
+	}
+
+	function updateGradientRadius(el: HTMLElement) {
+		const rect = el.getBoundingClientRect();
+		const radius = Math.max(rect.width, rect.height) * 1.4;
+		el.style.setProperty('--gradient-radius', radius + 'px');
+	}
+
+	function handleMouseMove(e: MouseEvent) {
+		const el = e.currentTarget as HTMLElement;
+		const rect = el.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		el.style.setProperty('--mouse-x', x + 'px');
+		el.style.setProperty('--mouse-y', y + 'px');
+	}
+
+	// No mouseleave handler - keep last position so gradient fades out in place
+
+	// Run on page load
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initMouseTracking);
+	} else {
+		initMouseTracking();
+	}
+
+	// Re-init after Astro view transitions
+	document.addEventListener('astro:page-load', initMouseTracking);
+</script>
