@@ -213,7 +213,7 @@ private fun Dial(
     ) {
         // Calculate transform origin for thumb rotation
 //        val dialSize = constraints.maxWidth.toFloat()
-        val dialSize by remember {
+        val dialSize by remember(constraints) {
             derivedStateOf {
                 Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
             }

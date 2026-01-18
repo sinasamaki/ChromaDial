@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -491,7 +493,7 @@ fun TimerDial() {
         Dial(
             degree = animatedDegree,
             onDegreeChanged = { degree = it },
-            modifier = Modifier.size(300.dp),
+            modifier = Modifier.fillMaxWidth().aspectRatio(1f),
             startDegrees = -360f * 4,
             sweepDegrees = 360f * 4,
             steps = (60 * 4) - 1,
@@ -549,7 +551,7 @@ fun TimerDial() {
                             ) {
                                 drawEveryStep(
                                     degreeRange = 0f..360f,
-                                    radius = size.width * .5f,
+                                    radius = it.radius,
                                     padding = 25.dp,
                                     steps = 11,
                                 ) { position, degree, _ ->
@@ -568,7 +570,7 @@ fun TimerDial() {
                                 }
                                 drawEveryStep(
                                     degreeRange = 0f..360f,
-                                    radius = size.width * .5f,
+                                    radius = it.radius,
                                     padding = 25.dp,
                                     steps = 59,
                                 ) { position, degree, _ ->
@@ -633,6 +635,7 @@ fun TimerDial() {
                         }
                         .fillMaxSize(),
                     degreeRange = 0f..360f,
+                    radius = it.radius,
                     steps = 11,
                 ) { index, position, degree, _ ->
                     if (index < 12) {
