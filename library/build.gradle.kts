@@ -5,14 +5,13 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.vanniktech.mavenPublish)
-//    alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
 }
 
-group = "com.sinasamaki.chroma.dial"
-version = "1.0.0"
+group = "com.sinasamaki"
+version = "1.0.0-Alpha1"
 
 kotlin {
     jvm()
@@ -42,14 +41,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            //put your multiplatform dependencies here
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.ui)
             implementation(compose.materialIconsExtended)
-//            implementation(compose.components.resources)
-//            implementation(compose.components.uiToolingPreview)
         }
 
         commonTest.dependencies {
@@ -68,31 +64,34 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "library", version.toString())
+    coordinates(group.toString(), "chroma-dial", version.toString())
 
     pom {
         name = "ChromaDial"
-        description = "A library."
-        inceptionYear = "2024"
+        description = "Beautiful, customizable circular dial components for Compose Multiplatform"
+        inceptionYear = "2026"
         url = "https://github.com/sinasamaki/ChromaDial/"
         licenses {
             license {
-                name = "XXX"
-                url = "YYY"
-                distribution = "ZZZ"
+                name = "The Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "https://www.apache.org/licenses/LICENSE-2.0.txt"
             }
         }
         developers {
             developer {
-                id = "XXX"
-                name = "YYY"
-                url = "ZZZ"
+                id = "sinasamaki"
+                name = "sinasamaki"
+                url = "https://github.com/sinasamaki"
+                email = "dev@sinasamaki.com"
+                organization = "sinasamaki OÜ"
+                organizationUrl = "https://sinasamaki.com"
             }
         }
         scm {
-            url = "XXX"
-            connection = "YYY"
-            developerConnection = "ZZZ"
+            url = "https://github.com/sinasamaki/ChromaDial/"
+            connection = "scm:git:git://github.com/sinasamaki/ChromaDial.git"
+            developerConnection = "scm:git:ssh://git@github.com/sinasamaki/ChromaDial.git"
         }
     }
 }
