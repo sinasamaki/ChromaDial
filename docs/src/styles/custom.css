@@ -1,11 +1,11 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=League+Spartan:wght@300;400;500;600;700&display=swap');
 
-/* Force dark mode with fuchsia accent */
+/* Force dark mode with lime accent */
 :root {
-	--sl-color-accent-low: #4a044e;
-	--sl-color-accent: #d946ef;
-	--sl-color-accent-high: #f0abfc;
+	--sl-color-accent-low: #1a2e05;
+	--sl-color-accent: #84cc16;
+	--sl-color-accent-high: #bef264;
 	--sl-color-white: #ffffff;
 	--sl-color-gray-1: #e5e5e5;
 	--sl-color-gray-2: #a3a3a3;
@@ -15,11 +15,11 @@
 	--sl-color-gray-6: #171717;
 	--sl-color-black: #0c0c0c;
 
-	/* Fuchsia colors */
-	--fuchsia-400: #e879f9;
-	--fuchsia-500: #d946ef;
-	--fuchsia-600: #c026d3;
-	--fuchsia-700: #a21caf;
+	/* Lime colors */
+	--lime-300: #bef264;
+	--lime-400: #a3e635;
+	--lime-500: #84cc16;
+	--lime-600: #65a30d;
 
 	/* Typography */
 	--sl-font: 'League Spartan', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -37,7 +37,7 @@
 	--sl-color-hairline-light: #262626;
 	--sl-color-hairline: #333333;
 	--sl-color-text: #e5e5e5;
-	--sl-color-text-accent: #f0abfc;
+	--sl-color-text-accent: #bef264;
 }
 
 /* Background overrides */
@@ -75,10 +75,7 @@ code {
 	background-color: #0c0c0c;
 }
 
-/* Hero section */
-.hero {
-	background-color: #0c0c0c;
-}
+/* Hero section background handled in Hero.astro component */
 
 /* Table styling */
 table {
@@ -189,9 +186,9 @@ tr:nth-child(even) {
 .bento-grid > .bento-card:hover {
 	transform: translateY(-3px) !important;
 	box-shadow:
-		inset 0 0 0 1px rgba(217, 70, 239, 0.25),
-		0 4px 30px rgba(217, 70, 239, 0.15),
-		0 0 50px rgba(217, 70, 239, 0.05) !important;
+		inset 0 0 0 1px rgba(132, 204, 22, 0.25),
+		0 4px 30px rgba(132, 204, 22, 0.15),
+		0 0 50px rgba(132, 204, 22, 0.05) !important;
 }
 
 /* Gradient border on hover */
@@ -203,8 +200,8 @@ tr:nth-child(even) {
 	padding: 1px !important;
 	background: radial-gradient(
 		var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
-		rgba(217, 70, 239, 0.6) 0%,
-		rgba(162, 28, 175, 0.3) 40%,
+		rgba(132, 204, 22, 0.6) 0%,
+		rgba(101, 163, 13, 0.3) 40%,
 		transparent 80%
 	) !important;
 	-webkit-mask:
@@ -225,8 +222,8 @@ tr:nth-child(even) {
 	border-radius: calc(var(--bento-radius) - 1px) !important;
 	background: radial-gradient(
 		var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
-		rgba(217, 70, 239, 0.12) 0%,
-		rgba(217, 70, 239, 0.06) 40%,
+		rgba(132, 204, 22, 0.12) 0%,
+		rgba(132, 204, 22, 0.06) 40%,
 		transparent 80%
 	) !important;
 	pointer-events: none !important;
@@ -251,7 +248,7 @@ tr:nth-child(even) {
 	width: 44px !important;
 	height: 44px !important;
 	border-radius: 12px !important;
-	background: linear-gradient(135deg, rgba(217, 70, 239, 0.2) 0%, rgba(162, 28, 175, 0.1) 100%) !important;
+	background: linear-gradient(135deg, rgba(132, 204, 22, 0.2) 0%, rgba(101, 163, 13, 0.1) 100%) !important;
 	margin: 0 0 1rem 0 !important;
 	padding: 0 !important;
 	position: relative !important;
@@ -262,7 +259,7 @@ tr:nth-child(even) {
 .bento-grid > .bento-card .bento-card-icon svg {
 	width: 22px !important;
 	height: 22px !important;
-	color: #e879f9 !important;
+	color: #a3e635 !important;
 }
 
 .bento-grid > .bento-card h3 {

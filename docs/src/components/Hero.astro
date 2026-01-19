@@ -1,93 +1,415 @@
 ---
-import { Image } from 'astro:assets';
-
 const PAGE_TITLE_ID = '_top';
 const { data } = Astro.locals.starlightRoute.entry;
-const { title = data.title, tagline, image, actions = [] } = data.hero || {};
-
-const imageAttrs = {
-	loading: 'eager' as const,
-	decoding: 'async' as const,
-	width: 400,
-	height: 400,
-	alt: image?.alt || '',
-};
-
-let darkImage: ImageMetadata | undefined;
-let lightImage: ImageMetadata | undefined;
-let rawHtml: string | undefined;
-if (image) {
-	if ('file' in image) {
-		darkImage = image.file;
-	} else if ('dark' in image) {
-		darkImage = image.dark;
-		lightImage = image.light;
-	} else {
-		rawHtml = image.html;
-	}
-}
+const { title = data.title, tagline, actions = [] } = data.hero || {};
 ---
 
 <div class="hero">
-	{
-		darkImage && (
-			<Image
-				src={darkImage}
-				{...imageAttrs}
-				class:list={{ 'light:sl-hidden': Boolean(lightImage) }}
-			/>
-		)
-	}
-	{lightImage && <Image src={lightImage} {...imageAttrs} class="dark:sl-hidden" />}
-	{rawHtml && <div class="hero-html sl-flex" set:html={rawHtml} />}
-	<div class="sl-flex stack">
-		<div class="sl-flex copy">
-			<h1 id={PAGE_TITLE_ID} data-page-title set:html={title} />
-			{tagline && <div class="tagline" set:html={tagline} />}
+	<!-- Hero Content -->
+	<div class="hero-content">
+		<div class="sl-flex stack">
+			<div class="sl-flex copy">
+				<h1 id={PAGE_TITLE_ID} data-page-title set:html={title} />
+				{tagline && <div class="tagline" set:html={tagline} />}
+			</div>
+			{
+				actions.length > 0 && (
+					<div class="sl-flex actions">
+						{actions.map(({ icon, link: href, text, variant }) => (
+							<div class={`action-wrapper ${variant || 'primary'}`}>
+								<a href={href} class={`action-link ${variant || 'primary'}`}>
+									<span>{text}</span>
+									{icon?.name === 'right-arrow' && (
+										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M5 12h14"></path>
+											<path d="m12 5 7 7-7 7"></path>
+										</svg>
+									)}
+									{icon?.name === 'external' && (
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+											<polyline points="15 3 21 3 21 9"></polyline>
+											<line x1="10" y1="14" x2="21" y2="3"></line>
+										</svg>
+									)}
+								</a>
+							</div>
+						))}
+					</div>
+				)
+			}
 		</div>
-		{
-			actions.length > 0 && (
-				<div class="sl-flex actions">
-					{actions.map(({ icon, link: href, text, variant }) => (
-						<div class={`action-wrapper ${variant || 'primary'}`}>
-							<a href={href} class={`action-link ${variant || 'primary'}`}>
-								<span>{text}</span>
-								{icon?.name === 'right-arrow' && (
-									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M5 12h14"></path>
-										<path d="m12 5 7 7-7 7"></path>
-									</svg>
-								)}
-								{icon?.name === 'external' && (
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-										<polyline points="15 3 21 3 21 9"></polyline>
-										<line x1="10" y1="14" x2="21" y2="3"></line>
-									</svg>
-								)}
-							</a>
-						</div>
-					))}
-				</div>
-			)
-		}
 	</div>
 </div>
 
-<style>
-	.hero {
-		display: grid;
-		align-items: center;
-		gap: 1rem;
-		padding-bottom: 1rem;
+<script>
+	// Dial configuration
+	const DIAL_COUNT = 5;
+	const THUMB_SIZE = 16;
+	const ARC_START = 0; // Start angle in degrees (0 = left side)
+	const ARC_END = 180; // End angle in degrees (180 = right side)
+
+	interface DialState {
+		angle: number;
+		targetAngle: number;
+		animating: boolean;
+		direction: 1 | -1;
+		speed: number;
+		dragging: boolean;
+		manuallyMoved: boolean;
 	}
 
-	.hero > img,
-	.hero > .hero-html {
-		object-fit: contain;
-		width: min(70%, 20rem);
-		height: auto;
-		margin-inline: auto;
+	const dialStates: DialState[] = [];
+	let dialContainer: HTMLDivElement | null = null;
+	let svg: SVGSVGElement | null = null;
+	let thumbsContainer: HTMLDivElement | null = null;
+
+	// Convert angle (0-180) to x,y coordinates
+	// 0° = left, 90° = bottom, 180° = right
+	// Center is at top-middle of viewport
+	function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
+		// Convert so that 0° is left, 90° is down, 180° is right
+		const angleRad = (angleDeg * Math.PI) / 180;
+		return {
+			x: cx - radius * Math.cos(angleRad),
+			y: cy + radius * Math.sin(angleRad),
+		};
+	}
+
+	function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
+		const start = polarToCartesian(cx, cy, radius, startAngle);
+		const end = polarToCartesian(cx, cy, radius, endAngle);
+		// For 180° arc, use large arc flag = 0, sweep = 1 (clockwise)
+		const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+		return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+	}
+
+	function createDialContainer() {
+		// Check if already created
+		if (document.getElementById('dial-background')) {
+			dialContainer = document.getElementById('dial-background') as HTMLDivElement;
+			svg = dialContainer.querySelector('svg') as SVGSVGElement;
+			thumbsContainer = document.getElementById('dial-thumbs') as HTMLDivElement;
+			return;
+		}
+
+		// Create container - absolute position so it scrolls with the page
+		dialContainer = document.createElement('div');
+		dialContainer.id = 'dial-background';
+		dialContainer.style.cssText = `
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100vh;
+			pointer-events: none;
+			z-index: 0;
+			overflow: visible;
+		`;
+
+		// Create SVG
+		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.style.cssText = `
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100vh;
+			overflow: visible;
+		`;
+		dialContainer.appendChild(svg);
+
+		// Append dial container to body as first child
+		document.body.style.position = 'relative';
+		document.body.insertBefore(dialContainer, document.body.firstChild);
+
+		// Create thumbs container as separate element with higher z-index
+		thumbsContainer = document.createElement('div');
+		thumbsContainer.id = 'dial-thumbs';
+		thumbsContainer.className = 'dial-thumbs';
+		thumbsContainer.style.cssText = `
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100vh;
+			pointer-events: none;
+			z-index: 100;
+		`;
+		document.body.appendChild(thumbsContainer);
+	}
+
+	function initDials() {
+		createDialContainer();
+
+		if (!svg || !thumbsContainer) return;
+
+		// Clear existing content
+		svg.innerHTML = '';
+		thumbsContainer.innerHTML = '';
+		dialStates.length = 0;
+
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+
+		// Get hero section height for base radius
+		const heroElement = document.querySelector('.hero') as HTMLElement;
+		const heroHeight = heroElement ? heroElement.offsetHeight : viewportHeight * 0.7;
+		const maxRadius = heroHeight;
+		const minRadius = viewportWidth / 4;
+		const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
+
+		// Set SVG viewBox and dimensions
+		svg.setAttribute('viewBox', `0 0 ${viewportWidth} ${viewportHeight}`);
+		svg.setAttribute('width', String(viewportWidth));
+		svg.setAttribute('height', String(viewportHeight));
+		svg.style.width = `${viewportWidth}px`;
+		svg.style.height = `${viewportHeight}px`;
+
+		const centerX = viewportWidth / 2;
+		const centerY = 0;
+
+		for (let i = 0; i < DIAL_COUNT; i++) {
+			const radius = maxRadius - i * radiusStep;
+
+			// Initialize dial state with random starting position and speed
+			const startAngle = ARC_START + Math.random() * (ARC_END - ARC_START);
+			dialStates.push({
+				angle: startAngle,
+				targetAngle: startAngle,
+				animating: true,
+				direction: Math.random() > 0.5 ? 1 : -1,
+				speed: 0.03 + Math.random() * 0.04,
+				dragging: false,
+				manuallyMoved: false,
+			});
+
+			// Create track path
+			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+			const d = describeArc(centerX, centerY, radius, ARC_START, ARC_END);
+			path.setAttribute('d', d);
+			path.setAttribute('fill', 'none');
+			path.setAttribute('stroke', '#84cc16');
+			path.setAttribute('stroke-opacity', '.1');
+			path.setAttribute('stroke-width', '1.5');
+			path.setAttribute('stroke-linecap', 'round');
+			svg.appendChild(path);
+
+			// Create thumb
+			const thumb = document.createElement('div');
+			thumb.className = 'dial-thumb';
+			thumb.dataset.index = String(i);
+			thumb.style.cssText = `
+				position: absolute;
+				width: 16px;
+				height: 16px;
+				border-radius: 50%;
+				border: 2px solid #84cc16;
+				background: #0c0c0c;
+				cursor: grab;
+				pointer-events: auto;
+				transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+			`;
+
+			// Hover effects
+			thumb.addEventListener('mouseenter', () => {
+				if (!thumb.classList.contains('dragging')) {
+					thumb.style.background = '#a3e635'; // Bright lime - full vibrancy
+					thumb.style.boxShadow = '0 0 8px rgba(163, 230, 53, 0.6), 0 0 16px rgba(132, 204, 22, 0.3)';
+					thumb.style.transform = 'scale(1.15)';
+				}
+			});
+			thumb.addEventListener('mouseleave', () => {
+				if (!thumb.classList.contains('dragging')) {
+					thumb.style.background = '#0c0c0c';
+					thumb.style.boxShadow = 'none';
+					thumb.style.transform = 'scale(1)';
+				}
+			});
+
+			thumbsContainer.appendChild(thumb);
+
+			// Update thumb position
+			updateThumbPosition(i, radius);
+
+			// Add drag handlers
+			setupDragHandlers(thumb, i, radius);
+		}
+	}
+
+	function updateThumbPosition(index: number, radius: number) {
+		const thumb = document.querySelector(`.dial-thumb[data-index="${index}"]`) as HTMLElement;
+		if (!thumb) return;
+
+		const state = dialStates[index];
+		const centerX = window.innerWidth / 2;
+		const centerY = 0;
+		const pos = polarToCartesian(centerX, centerY, radius, state.angle);
+
+		thumb.style.left = `${pos.x - THUMB_SIZE / 2}px`;
+		thumb.style.top = `${pos.y - THUMB_SIZE / 2}px`;
+	}
+
+	function setupDragHandlers(thumb: HTMLElement, index: number, radius: number) {
+		let isDragging = false;
+
+		const onPointerDown = (e: PointerEvent) => {
+			e.preventDefault();
+			isDragging = true;
+			dialStates[index].dragging = true;
+			dialStates[index].manuallyMoved = true; // Stop animation permanently
+			thumb.classList.add('dragging');
+			thumb.style.cursor = 'grabbing';
+			thumb.style.background = '#a3e635'; // Bright lime
+			thumb.style.boxShadow = '0 0 10px rgba(163, 230, 53, 0.7), 0 0 20px rgba(132, 204, 22, 0.4)';
+			thumb.style.transform = 'scale(1.2)';
+			thumb.setPointerCapture(e.pointerId);
+		};
+
+		const onPointerMove = (e: PointerEvent) => {
+			if (!isDragging) return;
+
+			const centerX = window.innerWidth / 2;
+			const centerY = 0;
+
+			// Calculate angle from center to pointer
+			// Our coordinate system: 0° = left, 90° = down, 180° = right
+			const dx = e.clientX - centerX;
+			const dy = e.clientY - centerY;
+
+			// atan2 gives angle from positive x-axis, we need to convert
+			// dx negative, dy positive = left side = 0°
+			// dx zero, dy positive = bottom = 90°
+			// dx positive, dy positive = right side = 180°
+			let angle = (Math.atan2(dy, -dx) * 180) / Math.PI;
+
+			// Clamp to arc range
+			angle = Math.max(ARC_START, Math.min(ARC_END, angle));
+
+			dialStates[index].angle = angle;
+			updateThumbPosition(index, radius);
+		};
+
+		const onPointerUp = (e: PointerEvent) => {
+			if (!isDragging) return;
+			isDragging = false;
+			dialStates[index].dragging = false;
+			thumb.classList.remove('dragging');
+			thumb.style.cursor = 'grab';
+			thumb.style.background = '#0c0c0c';
+			thumb.style.boxShadow = 'none';
+			thumb.style.transform = 'scale(1)';
+			thumb.releasePointerCapture(e.pointerId);
+		};
+
+		thumb.addEventListener('pointerdown', onPointerDown);
+		document.addEventListener('pointermove', onPointerMove);
+		document.addEventListener('pointerup', onPointerUp);
+	}
+
+	function animate() {
+		const viewportWidth = window.innerWidth;
+
+		for (let i = 0; i < DIAL_COUNT; i++) {
+			const state = dialStates[i];
+
+			// Skip animation if manually moved or currently dragging
+			if (state.manuallyMoved || state.dragging) continue;
+
+			// Update angle
+			state.angle += state.direction * state.speed;
+
+			// Reverse direction at boundaries
+			if (state.angle >= ARC_END) {
+				state.angle = ARC_END;
+				state.direction = -1;
+			} else if (state.angle <= ARC_START) {
+				state.angle = ARC_START;
+				state.direction = 1;
+			}
+
+			const heroElement = document.querySelector('.hero') as HTMLElement;
+			const heroHeight = heroElement ? heroElement.offsetHeight : viewportHeight * 0.7;
+			const maxRadius = heroHeight;
+			const minRadius = viewportWidth / 4;
+			const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
+			const radius = maxRadius - i * radiusStep;
+			updateThumbPosition(i, radius);
+		}
+
+		requestAnimationFrame(animate);
+	}
+
+	function handleResize() {
+		// Store manual states before reinit
+		const manualStates = dialStates.map((s) => ({
+			manuallyMoved: s.manuallyMoved,
+			angle: s.angle,
+		}));
+
+		initDials();
+
+		// Restore manual states
+		manualStates.forEach((state, i) => {
+			if (state.manuallyMoved && dialStates[i]) {
+				dialStates[i].manuallyMoved = true;
+				dialStates[i].angle = state.angle;
+				const heroElement = document.querySelector('.hero') as HTMLElement;
+				const heroHeight = heroElement ? heroElement.offsetHeight : window.innerHeight * 0.7;
+				const maxRadius = heroHeight;
+				const minRadius = window.innerWidth / 4;
+				const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
+				const radius = maxRadius - i * radiusStep;
+				updateThumbPosition(i, radius);
+			}
+		});
+	}
+
+	let animationStarted = false;
+
+	function startAnimation() {
+		if (animationStarted) return;
+		animationStarted = true;
+		animate();
+	}
+
+	// Initialize on load
+	document.addEventListener('DOMContentLoaded', () => {
+		initDials();
+		startAnimation();
+	});
+
+	// Also initialize immediately if DOM is already loaded
+	if (document.readyState !== 'loading') {
+		initDials();
+		startAnimation();
+	}
+
+	// Handle resize with debounce
+	let resizeTimeout: ReturnType<typeof setTimeout>;
+	window.addEventListener('resize', () => {
+		clearTimeout(resizeTimeout);
+		resizeTimeout = setTimeout(handleResize, 150);
+	});
+</script>
+
+<style>
+	.hero {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 70vh;
+		padding: 4rem 1rem;
+		overflow: visible;
+	}
+
+	/* Hero Content */
+	.hero-content {
+		position: relative;
+		z-index: 10;
+		max-width: 800px;
+		width: 100%;
 	}
 
 	.stack {
@@ -103,7 +425,7 @@ if (image) {
 	}
 
 	.copy > * {
-		max-width: 50ch;
+		max-width: 60ch;
 	}
 
 	h1 {
@@ -122,32 +444,6 @@ if (image) {
 		gap: 1rem 2rem;
 		flex-wrap: wrap;
 		justify-content: center;
-	}
-
-	@media (min-width: 50rem) {
-		.hero {
-			grid-template-columns: 7fr 4fr;
-			gap: 3%;
-			padding-block: clamp(2.5rem, calc(1rem + 10vmin), 10rem);
-		}
-
-		.hero > img,
-		.hero > .hero-html {
-			order: 2;
-			width: min(100%, 25rem);
-		}
-
-		.stack {
-			text-align: start;
-		}
-
-		.copy {
-			align-items: flex-start;
-		}
-
-		.actions {
-			justify-content: flex-start;
-		}
 	}
 
 	/* Primary button wrapper with glow effects */
@@ -170,8 +466,8 @@ if (image) {
 		padding: 1px;
 		background: radial-gradient(
 			var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
-			#d946ef 0%,
-			#a21caf 40%,
+			#84cc16 0%,
+			#65a30d 40%,
 			transparent 80%
 		);
 		-webkit-mask:
@@ -191,8 +487,8 @@ if (image) {
 		border-radius: 13px;
 		background: radial-gradient(
 			var(--gradient-radius) circle at var(--mouse-x) var(--mouse-y),
-			rgba(217, 70, 239, 0.25) 0%,
-			rgba(217, 70, 239, 0.1) 40%,
+			rgba(132, 204, 22, 0.25) 0%,
+			rgba(132, 204, 22, 0.1) 40%,
 			transparent 80%
 		);
 		pointer-events: none;
@@ -211,14 +507,14 @@ if (image) {
 
 	.action-wrapper.primary:hover {
 		box-shadow:
-			0 0 25px rgba(217, 70, 239, 0.4),
-			0 0 50px rgba(217, 70, 239, 0.2),
-			0 0 75px rgba(217, 70, 239, 0.1);
+			0 0 25px rgba(132, 204, 22, 0.4),
+			0 0 50px rgba(132, 204, 22, 0.2),
+			0 0 75px rgba(132, 204, 22, 0.1);
 	}
 
 	/* Static border */
 	.action-wrapper.primary {
-		box-shadow: inset 0 0 0 1px rgba(217, 70, 239, 0.4);
+		box-shadow: inset 0 0 0 1px rgba(132, 204, 22, 0.4);
 	}
 
 	.action-link.primary {
@@ -228,8 +524,8 @@ if (image) {
 		gap: 0.5rem;
 		padding: 0.75rem 1.5rem;
 		border-radius: 13px;
-		background: rgba(217, 70, 239, 0.1);
-		color: #f0abfc;
+		background: rgba(132, 204, 22, 0.1);
+		color: #bef264;
 		font-weight: 600;
 		font-size: var(--sl-text-base);
 		text-decoration: none;
@@ -239,7 +535,7 @@ if (image) {
 
 	.action-link.primary:hover {
 		color: #ffffff;
-		background: rgba(217, 70, 239, 0.15);
+		background: rgba(132, 204, 22, 0.15);
 	}
 
 	.action-link.primary svg {
