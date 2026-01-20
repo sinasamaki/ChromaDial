@@ -5,6 +5,11 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 ---
 
 <div class="hero">
+	<!-- Dial Container - Inside hero for proper scoping -->
+	<div class="dial-container" id="dial-container">
+		<!-- SVG injected by JS -->
+	</div>
+
 	<!-- Hero Content -->
 	<div class="hero-content">
 		<div class="sl-flex stack">
@@ -45,324 +50,366 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 <script>
 	// Dial configuration
 	const DIAL_COUNT = 5;
-	const THUMB_SIZE = 16;
-	const ARC_START = 0; // Start angle in degrees (0 = left side)
-	const ARC_END = 180; // End angle in degrees (180 = right side)
+	const THUMB_RADIUS = 8;
 
 	interface DialState {
 		angle: number;
-		targetAngle: number;
-		animating: boolean;
 		direction: 1 | -1;
-		speed: number;
+		baseSpeed: number;
+		radius: number;
 		dragging: boolean;
-		manuallyMoved: boolean;
+		hovered: boolean;
 	}
 
 	const dialStates: DialState[] = [];
-	let dialContainer: HTMLDivElement | null = null;
 	let svg: SVGSVGElement | null = null;
-	let thumbsContainer: HTMLDivElement | null = null;
 
-	// Convert angle (0-180) to x,y coordinates
-	// 0° = left, 90° = bottom, 180° = right
-	// Center is at top-middle of viewport
-	function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
-		// Convert so that 0° is left, 90° is down, 180° is right
-		const angleRad = (angleDeg * Math.PI) / 180;
-		return {
-			x: cx - radius * Math.cos(angleRad),
-			y: cy + radius * Math.sin(angleRad),
-		};
-	}
+	// Smooth resize interpolation state
+	let targetDimensions = { width: 0, height: 0 };
+	let currentDimensions = { width: 0, height: 0 };
+	let resizeFrame: number | null = null;
 
-	function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
-		const start = polarToCartesian(cx, cy, radius, startAngle);
-		const end = polarToCartesian(cx, cy, radius, endAngle);
-		// For 180° arc, use large arc flag = 0, sweep = 1 (clockwise)
-		const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
-		return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
-	}
+	function createDialGroup(
+		index: number,
+		centerX: number,
+		centerY: number,
+		radius: number,
+		initialAngle: number
+	): SVGGElement {
+		const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		group.classList.add('dial-group');
+		group.dataset.index = String(index);
+		group.style.transformOrigin = `${centerX}px ${centerY}px`;
+		group.style.transform = `rotate(${initialAngle}deg)`;
 
-	function createDialContainer() {
-		// Check if already created
-		if (document.getElementById('dial-background')) {
-			dialContainer = document.getElementById('dial-background') as HTMLDivElement;
-			svg = dialContainer.querySelector('svg') as SVGSVGElement;
-			thumbsContainer = document.getElementById('dial-thumbs') as HTMLDivElement;
-			return;
-		}
+		// Full circle track
+		const track = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		track.classList.add('dial-track');
+		track.setAttribute('cx', String(centerX));
+		track.setAttribute('cy', String(centerY));
+		track.setAttribute('r', String(radius));
+		track.setAttribute('fill', 'none');
+		track.setAttribute('stroke', '#84cc16');
+		track.setAttribute('stroke-opacity', '0.1');
+		track.setAttribute('stroke-width', '1.5');
+		group.appendChild(track);
 
-		// Create container - absolute position so it scrolls with the page
-		dialContainer = document.createElement('div');
-		dialContainer.id = 'dial-background';
-		dialContainer.style.cssText = `
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100vh;
-			pointer-events: none;
-			z-index: 0;
-			overflow: visible;
-		`;
+		// Invisible hit area (larger touch target)
+		const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		hitArea.classList.add('dial-hit-area');
+		hitArea.setAttribute('cx', String(centerX));
+		hitArea.setAttribute('cy', String(radius));
+		hitArea.setAttribute('r', String(THUMB_RADIUS * 2.5)); // Much larger hit area
+		hitArea.setAttribute('fill', 'transparent');
+		group.appendChild(hitArea);
 
-		// Create SVG
-		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-		svg.style.cssText = `
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100vh;
-			overflow: visible;
-		`;
-		dialContainer.appendChild(svg);
+		// Visible thumb at radius distance below pivot (cy=0)
+		const thumb = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		thumb.classList.add('dial-thumb');
+		thumb.setAttribute('cx', String(centerX));
+		thumb.setAttribute('cy', String(radius)); // radius below pivot
+		thumb.setAttribute('r', String(THUMB_RADIUS));
+		thumb.setAttribute('fill', '#0c0c0c');
+		thumb.setAttribute('stroke', '#84cc16');
+		thumb.setAttribute('stroke-width', '2');
+		group.appendChild(thumb);
 
-		// Append dial container to body as first child
-		document.body.style.position = 'relative';
-		document.body.insertBefore(dialContainer, document.body.firstChild);
-
-		// Create thumbs container as separate element with higher z-index
-		thumbsContainer = document.createElement('div');
-		thumbsContainer.id = 'dial-thumbs';
-		thumbsContainer.className = 'dial-thumbs';
-		thumbsContainer.style.cssText = `
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100vh;
-			pointer-events: none;
-			z-index: 100;
-		`;
-		document.body.appendChild(thumbsContainer);
+		return group;
 	}
 
 	function initDials() {
-		createDialContainer();
+		const container = document.getElementById('dial-container') as HTMLElement;
+		if (!container) return;
 
-		if (!svg || !thumbsContainer) return;
+		const heroElement = document.querySelector('.hero') as HTMLElement;
+		if (!heroElement) return;
+
+		// Get hero's offset from page top (accounts for nav bar, etc.)
+		const heroRect = heroElement.getBoundingClientRect();
+		const scrollTop = window.scrollY || document.documentElement.scrollTop;
+		const heroTopFromPage = heroRect.top + scrollTop;
+
+		// Position container to start at page top
+		container.style.top = `-${heroTopFromPage}px`;
+		container.style.height = `${heroElement.offsetHeight + heroTopFromPage}px`;
+
+		// Get or create SVG
+		svg = container.querySelector('svg');
+		if (!svg) {
+			svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			svg.style.cssText = `
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				overflow: visible;
+			`;
+			container.appendChild(svg);
+		}
 
 		// Clear existing content
 		svg.innerHTML = '';
-		thumbsContainer.innerHTML = '';
 		dialStates.length = 0;
 
 		const viewportWidth = window.innerWidth;
-		const viewportHeight = window.innerHeight;
+		const heroHeight = heroElement.offsetHeight;
+		const totalHeight = heroHeight + heroTopFromPage;
 
-		// Get hero section height for base radius
-		const heroElement = document.querySelector('.hero') as HTMLElement;
-		const heroHeight = heroElement ? heroElement.offsetHeight : viewportHeight * 0.7;
-		const maxRadius = heroHeight;
-		const minRadius = viewportWidth / 4;
-		const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
+		// Initialize dimensions for smooth resize
+		if (currentDimensions.width === 0) {
+			currentDimensions = { width: viewportWidth, height: totalHeight };
+			targetDimensions = { width: viewportWidth, height: totalHeight };
+		}
 
-		// Set SVG viewBox and dimensions
-		svg.setAttribute('viewBox', `0 0 ${viewportWidth} ${viewportHeight}`);
-		svg.setAttribute('width', String(viewportWidth));
-		svg.setAttribute('height', String(viewportHeight));
-		svg.style.width = `${viewportWidth}px`;
-		svg.style.height = `${viewportHeight}px`;
+		// Update SVG viewBox - extends from page top through hero
+		svg.setAttribute('viewBox', `0 0 ${viewportWidth} ${totalHeight}`);
 
 		const centerX = viewportWidth / 2;
-		const centerY = 0;
+		const centerY = 0; // Pivot at absolute page top
+
+		// Calculate radii - max radius = hero height (measured from page top)
+		const maxRadius = heroHeight + heroTopFromPage;
+		const minRadius = maxRadius / 6;
+		const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
 
 		for (let i = 0; i < DIAL_COUNT; i++) {
 			const radius = maxRadius - i * radiusStep;
 
 			// Initialize dial state with random starting position and speed
-			const startAngle = ARC_START + Math.random() * (ARC_END - ARC_START);
+			const startAngle = Math.random() * 360;
 			dialStates.push({
 				angle: startAngle,
-				targetAngle: startAngle,
-				animating: true,
 				direction: Math.random() > 0.5 ? 1 : -1,
-				speed: 0.03 + Math.random() * 0.04,
+				baseSpeed: 0.5 + Math.random() * 0.3, // Linear speed (pixels per frame conceptually)
+				radius: radius,
 				dragging: false,
-				manuallyMoved: false,
+				hovered: false,
 			});
 
-			// Create track path
-			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-			const d = describeArc(centerX, centerY, radius, ARC_START, ARC_END);
-			path.setAttribute('d', d);
-			path.setAttribute('fill', 'none');
-			path.setAttribute('stroke', '#84cc16');
-			path.setAttribute('stroke-opacity', '.1');
-			path.setAttribute('stroke-width', '1.5');
-			path.setAttribute('stroke-linecap', 'round');
-			svg.appendChild(path);
+			// Create dial group with track and thumb
+			const group = createDialGroup(i, centerX, centerY, radius, startAngle);
+			svg.appendChild(group);
 
-			// Create thumb
-			const thumb = document.createElement('div');
-			thumb.className = 'dial-thumb';
-			thumb.dataset.index = String(i);
-			thumb.style.cssText = `
-				position: absolute;
-				width: 16px;
-				height: 16px;
-				border-radius: 50%;
-				border: 2px solid #84cc16;
-				background: #0c0c0c;
-				cursor: grab;
-				pointer-events: auto;
-				transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-			`;
-
-			// Hover effects
-			thumb.addEventListener('mouseenter', () => {
-				if (!thumb.classList.contains('dragging')) {
-					thumb.style.background = '#a3e635'; // Bright lime - full vibrancy
-					thumb.style.boxShadow = '0 0 8px rgba(163, 230, 53, 0.6), 0 0 16px rgba(132, 204, 22, 0.3)';
-					thumb.style.transform = 'scale(1.15)';
-				}
-			});
-			thumb.addEventListener('mouseleave', () => {
-				if (!thumb.classList.contains('dragging')) {
-					thumb.style.background = '#0c0c0c';
-					thumb.style.boxShadow = 'none';
-					thumb.style.transform = 'scale(1)';
-				}
-			});
-
-			thumbsContainer.appendChild(thumb);
-
-			// Update thumb position
-			updateThumbPosition(i, radius);
-
-			// Add drag handlers
-			setupDragHandlers(thumb, i, radius);
+			// Setup drag handlers
+			setupDragHandlers(group, i);
 		}
 	}
 
-	function updateThumbPosition(index: number, radius: number) {
-		const thumb = document.querySelector(`.dial-thumb[data-index="${index}"]`) as HTMLElement;
-		if (!thumb) return;
-
-		const state = dialStates[index];
-		const centerX = window.innerWidth / 2;
-		const centerY = 0;
-		const pos = polarToCartesian(centerX, centerY, radius, state.angle);
-
-		thumb.style.left = `${pos.x - THUMB_SIZE / 2}px`;
-		thumb.style.top = `${pos.y - THUMB_SIZE / 2}px`;
+	function updateDialRotation(index: number, angle: number) {
+		const group = document.querySelector(`.dial-group[data-index="${index}"]`) as SVGGElement;
+		if (group) {
+			group.style.transform = `rotate(${angle}deg)`;
+		}
 	}
 
-	function setupDragHandlers(thumb: HTMLElement, index: number, radius: number) {
-		let isDragging = false;
+	function updateDialDimensions(width: number, height: number) {
+		if (!svg) return;
 
-		const onPointerDown = (e: PointerEvent) => {
-			e.preventDefault();
+		svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+		const centerX = width / 2;
+		const centerY = 0; // Pivot at page top
+		// height is total height from page top through hero bottom
+		const maxRadius = height;
+		const minRadius = height / 6;
+		const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
+
+		for (let i = 0; i < DIAL_COUNT; i++) {
+			const radius = maxRadius - i * radiusStep;
+			const group = document.querySelector(`.dial-group[data-index="${i}"]`) as SVGGElement;
+			if (!group) continue;
+
+			// Update radius in state for animation normalization
+			if (dialStates[i]) {
+				dialStates[i].radius = radius;
+			}
+
+			// Update transform origin - pivot at page top center
+			group.style.transformOrigin = `${centerX}px ${centerY}px`;
+
+			// Update track
+			const track = group.querySelector('.dial-track') as SVGCircleElement;
+			if (track) {
+				track.setAttribute('cx', String(centerX));
+				track.setAttribute('cy', String(centerY));
+				track.setAttribute('r', String(radius));
+			}
+
+			// Update thumb position (always at radius distance below center)
+			const thumb = group.querySelector('.dial-thumb') as SVGCircleElement;
+			if (thumb) {
+				thumb.setAttribute('cx', String(centerX));
+				thumb.setAttribute('cy', String(radius));
+			}
+
+			// Update hit area position
+			const hitArea = group.querySelector('.dial-hit-area') as SVGCircleElement;
+			if (hitArea) {
+				hitArea.setAttribute('cx', String(centerX));
+				hitArea.setAttribute('cy', String(radius));
+			}
+		}
+	}
+
+	function setupDragHandlers(group: SVGGElement, index: number) {
+		const thumb = group.querySelector('.dial-thumb') as SVGCircleElement;
+		const hitArea = group.querySelector('.dial-hit-area') as SVGCircleElement;
+		if (!thumb || !hitArea) return;
+
+		let isDragging = false;
+		let angleOffset = 0;
+
+		// Ensure touch-action is set inline for maximum compatibility
+		hitArea.style.touchAction = 'none';
+
+		const getAngleFromPoint = (clientX: number, clientY: number): number => {
+			const centerX = window.innerWidth / 2;
+			// Pivot at page top (y=0), in viewport coords that's -scrollY
+			const centerY = -(window.scrollY || document.documentElement.scrollTop);
+			const dx = clientX - centerX;
+			const dy = clientY - centerY;
+			return -Math.atan2(dx, dy) * (180 / Math.PI);
+		};
+
+		const startDrag = (clientX: number, clientY: number) => {
 			isDragging = true;
 			dialStates[index].dragging = true;
-			dialStates[index].manuallyMoved = true; // Stop animation permanently
 			thumb.classList.add('dragging');
-			thumb.style.cursor = 'grabbing';
-			thumb.style.background = '#a3e635'; // Bright lime
-			thumb.style.boxShadow = '0 0 10px rgba(163, 230, 53, 0.7), 0 0 20px rgba(132, 204, 22, 0.4)';
-			thumb.style.transform = 'scale(1.2)';
-			thumb.setPointerCapture(e.pointerId);
+			const cursorAngle = getAngleFromPoint(clientX, clientY);
+			angleOffset = dialStates[index].angle - cursorAngle;
 		};
 
-		const onPointerMove = (e: PointerEvent) => {
+		const moveDrag = (clientX: number, clientY: number) => {
 			if (!isDragging) return;
-
-			const centerX = window.innerWidth / 2;
-			const centerY = 0;
-
-			// Calculate angle from center to pointer
-			// Our coordinate system: 0° = left, 90° = down, 180° = right
-			const dx = e.clientX - centerX;
-			const dy = e.clientY - centerY;
-
-			// atan2 gives angle from positive x-axis, we need to convert
-			// dx negative, dy positive = left side = 0°
-			// dx zero, dy positive = bottom = 90°
-			// dx positive, dy positive = right side = 180°
-			let angle = (Math.atan2(dy, -dx) * 180) / Math.PI;
-
-			// Clamp to arc range
-			angle = Math.max(ARC_START, Math.min(ARC_END, angle));
-
-			dialStates[index].angle = angle;
-			updateThumbPosition(index, radius);
+			const cursorAngle = getAngleFromPoint(clientX, clientY);
+			let newAngle = cursorAngle + angleOffset;
+			while (newAngle < 0) newAngle += 360;
+			while (newAngle >= 360) newAngle -= 360;
+			dialStates[index].angle = newAngle;
+			updateDialRotation(index, newAngle);
 		};
 
-		const onPointerUp = (e: PointerEvent) => {
+		const endDrag = () => {
 			if (!isDragging) return;
 			isDragging = false;
 			dialStates[index].dragging = false;
 			thumb.classList.remove('dragging');
-			thumb.style.cursor = 'grab';
-			thumb.style.background = '#0c0c0c';
-			thumb.style.boxShadow = 'none';
-			thumb.style.transform = 'scale(1)';
-			thumb.releasePointerCapture(e.pointerId);
 		};
 
-		thumb.addEventListener('pointerdown', onPointerDown);
-		document.addEventListener('pointermove', onPointerMove);
-		document.addEventListener('pointerup', onPointerUp);
+		// Touch events for mobile (more reliable than pointer events on some devices)
+		hitArea.addEventListener('touchstart', (e: TouchEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const touch = e.touches[0];
+			startDrag(touch.clientX, touch.clientY);
+		}, { passive: false });
+
+		document.addEventListener('touchmove', (e: TouchEvent) => {
+			if (!isDragging) return;
+			e.preventDefault();
+			const touch = e.touches[0];
+			moveDrag(touch.clientX, touch.clientY);
+		}, { passive: false });
+
+		document.addEventListener('touchend', () => {
+			endDrag();
+		});
+
+		document.addEventListener('touchcancel', () => {
+			endDrag();
+		});
+
+		// Mouse events for desktop
+		hitArea.addEventListener('mousedown', (e: MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			startDrag(e.clientX, e.clientY);
+		});
+
+		document.addEventListener('mousemove', (e: MouseEvent) => {
+			if (!isDragging) return;
+			moveDrag(e.clientX, e.clientY);
+		});
+
+		document.addEventListener('mouseup', () => {
+			endDrag();
+		});
+
+		// Hover events for desktop - pause animation on hover
+		hitArea.addEventListener('mouseenter', () => {
+			dialStates[index].hovered = true;
+		});
+
+		hitArea.addEventListener('mouseleave', () => {
+			dialStates[index].hovered = false;
+		});
 	}
 
 	function animate() {
-		const viewportWidth = window.innerWidth;
-
 		for (let i = 0; i < DIAL_COUNT; i++) {
 			const state = dialStates[i];
 
-			// Skip animation if manually moved or currently dragging
-			if (state.manuallyMoved || state.dragging) continue;
+			// Skip animation if hovered or currently dragging
+			if (state.hovered || state.dragging) continue;
 
-			// Update angle
-			state.angle += state.direction * state.speed;
+			// Normalize angular speed by radius for consistent linear thumb speed
+			// angularSpeed = linearSpeed / radius (converted to degrees)
+			const angularSpeed = (state.baseSpeed / state.radius) * (180 / Math.PI);
+			state.angle += state.direction * angularSpeed;
 
-			// Reverse direction at boundaries
-			if (state.angle >= ARC_END) {
-				state.angle = ARC_END;
-				state.direction = -1;
-			} else if (state.angle <= ARC_START) {
-				state.angle = ARC_START;
-				state.direction = 1;
-			}
+			// Normalize to 0-360 (no bouncing at boundaries)
+			if (state.angle >= 360) state.angle -= 360;
+			if (state.angle < 0) state.angle += 360;
 
-			const heroElement = document.querySelector('.hero') as HTMLElement;
-			const heroHeight = heroElement ? heroElement.offsetHeight : viewportHeight * 0.7;
-			const maxRadius = heroHeight;
-			const minRadius = viewportWidth / 4;
-			const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
-			const radius = maxRadius - i * radiusStep;
-			updateThumbPosition(i, radius);
+			updateDialRotation(i, state.angle);
 		}
 
 		requestAnimationFrame(animate);
 	}
 
 	function handleResize() {
-		// Store manual states before reinit
-		const manualStates = dialStates.map((s) => ({
-			manuallyMoved: s.manuallyMoved,
-			angle: s.angle,
-		}));
+		const heroElement = document.querySelector('.hero') as HTMLElement;
+		if (!heroElement) return;
 
-		initDials();
+		const heroRect = heroElement.getBoundingClientRect();
+		const scrollTop = window.scrollY || document.documentElement.scrollTop;
+		const heroTopFromPage = heroRect.top + scrollTop;
+		const totalHeight = heroElement.offsetHeight + heroTopFromPage;
 
-		// Restore manual states
-		manualStates.forEach((state, i) => {
-			if (state.manuallyMoved && dialStates[i]) {
-				dialStates[i].manuallyMoved = true;
-				dialStates[i].angle = state.angle;
-				const heroElement = document.querySelector('.hero') as HTMLElement;
-				const heroHeight = heroElement ? heroElement.offsetHeight : window.innerHeight * 0.7;
-				const maxRadius = heroHeight;
-				const minRadius = window.innerWidth / 4;
-				const radiusStep = (maxRadius - minRadius) / (DIAL_COUNT - 1);
-				const radius = maxRadius - i * radiusStep;
-				updateThumbPosition(i, radius);
-			}
-		});
+		// Update container positioning
+		const container = document.getElementById('dial-container') as HTMLElement;
+		if (container) {
+			container.style.top = `-${heroTopFromPage}px`;
+			container.style.height = `${totalHeight}px`;
+		}
+
+		targetDimensions = { width: window.innerWidth, height: totalHeight };
+
+		if (!resizeFrame) {
+			smoothResize();
+		}
+	}
+
+	function smoothResize() {
+		const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+		currentDimensions.width = lerp(currentDimensions.width, targetDimensions.width, 0.15);
+		currentDimensions.height = lerp(currentDimensions.height, targetDimensions.height, 0.15);
+
+		updateDialDimensions(currentDimensions.width, currentDimensions.height);
+
+		const widthDiff = Math.abs(currentDimensions.width - targetDimensions.width);
+		const heightDiff = Math.abs(currentDimensions.height - targetDimensions.height);
+
+		if (widthDiff > 0.5 || heightDiff > 0.5) {
+			resizeFrame = requestAnimationFrame(smoothResize);
+		} else {
+			resizeFrame = null;
+			// Snap to final dimensions
+			currentDimensions = { ...targetDimensions };
+			updateDialDimensions(targetDimensions.width, targetDimensions.height);
+		}
 	}
 
 	let animationStarted = false;
@@ -385,12 +432,8 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 		startAnimation();
 	}
 
-	// Handle resize with debounce
-	let resizeTimeout: ReturnType<typeof setTimeout>;
-	window.addEventListener('resize', () => {
-		clearTimeout(resizeTimeout);
-		resizeTimeout = setTimeout(handleResize, 150);
-	});
+	// Handle resize
+	window.addEventListener('resize', handleResize);
 </script>
 
 <style>
@@ -401,15 +444,76 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 		justify-content: center;
 		min-height: 70vh;
 		padding: 4rem 1rem;
-		overflow: visible;
+		overflow: visible; /* Allow dials to extend beyond */
 	}
 
-	/* Hero Content */
+	/* Dial Container - Absolute positioned, scrolls with page */
+	.dial-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	/* Dial groups - no pointer events on the group itself */
+	:global(.dial-group) {
+		pointer-events: none;
+	}
+
+	/* Hit area - larger invisible touch target */
+	:global(.dial-hit-area) {
+		pointer-events: auto;
+		cursor: grab;
+		touch-action: none;
+	}
+
+	:global(.dial-hit-area:active) {
+		cursor: grabbing;
+	}
+
+	/* Thumb visual styling */
+	:global(.dial-thumb) {
+		pointer-events: none; /* Hit area handles events */
+		transition:
+			fill 0.2s ease,
+			stroke-width 0.2s ease,
+			r 0.15s ease;
+	}
+
+	/* Hover effect - triggered via hit area hover */
+	:global(.dial-hit-area:hover + .dial-thumb),
+	:global(.dial-hit-area:hover ~ .dial-thumb) {
+		fill: #a3e635;
+		stroke-width: 2.5;
+		r: 9;
+	}
+
+	:global(.dial-thumb.dragging) {
+		fill: #a3e635;
+		stroke-width: 3;
+		r: 10;
+	}
+
+	/* Hero Content - allow drag through empty space */
 	.hero-content {
 		position: relative;
 		z-index: 10;
 		max-width: 800px;
 		width: 100%;
+		pointer-events: none; /* Allow drag through empty space */
+	}
+
+	/* Re-enable pointer events on actual interactive elements */
+	.hero-content h1,
+	.hero-content .tagline,
+	.hero-content .action-wrapper,
+	.hero-content .action-link,
+	.hero-content a {
+		pointer-events: auto;
 	}
 
 	.stack {

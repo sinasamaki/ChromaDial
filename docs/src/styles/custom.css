@@ -44,6 +44,7 @@
 html,
 body {
 	background-color: #0c0c0c;
+	overflow-x: hidden; /* Prevent horizontal scroll from dials */
 }
 
 .sl-markdown-content {
