@@ -64,6 +64,21 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 	const dialStates: DialState[] = [];
 	let svg: SVGSVGElement | null = null;
 
+	// Calculate the angle bounds where the track is visible within viewport
+	function getAngleBounds(radius: number, viewportWidth: number): { minAngle: number; maxAngle: number } {
+		const centerX = viewportWidth / 2;
+		const ratio = centerX / radius;
+
+		if (ratio >= 1) {
+			// Full semicircle is visible
+			return { minAngle: -90, maxAngle: 90 };
+		} else {
+			// Only part of the arc is visible - calculate where track hits viewport edges
+			const maxAngle = Math.asin(ratio) * (180 / Math.PI);
+			return { minAngle: -maxAngle, maxAngle: maxAngle };
+		}
+	}
+
 	// Smooth resize interpolation state
 	let targetDimensions = { width: 0, height: 0 };
 	let currentDimensions = { width: 0, height: 0 };
@@ -176,8 +191,9 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 		for (let i = 0; i < DIAL_COUNT; i++) {
 			const radius = maxRadius - i * radiusStep;
 
-			// Initialize dial state with random starting position and speed
-			const startAngle = Math.random() * 360;
+			// Initialize dial state with random starting position within visible bounds
+			const bounds = getAngleBounds(radius, viewportWidth);
+			const startAngle = bounds.minAngle + Math.random() * (bounds.maxAngle - bounds.minAngle);
 			dialStates.push({
 				angle: startAngle,
 				direction: Math.random() > 0.5 ? 1 : -1,
@@ -284,8 +300,11 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 			if (!isDragging) return;
 			const cursorAngle = getAngleFromPoint(clientX, clientY);
 			let newAngle = cursorAngle + angleOffset;
-			while (newAngle < 0) newAngle += 360;
-			while (newAngle >= 360) newAngle -= 360;
+
+			// Clamp to visible bounds
+			const bounds = getAngleBounds(dialStates[index].radius, window.innerWidth);
+			newAngle = Math.max(bounds.minAngle, Math.min(bounds.maxAngle, newAngle));
+
 			dialStates[index].angle = newAngle;
 			updateDialRotation(index, newAngle);
 		};
@@ -347,20 +366,31 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 	}
 
 	function animate() {
+		const viewportWidth = window.innerWidth;
+
 		for (let i = 0; i < DIAL_COUNT; i++) {
 			const state = dialStates[i];
 
 			// Skip animation if hovered or currently dragging
 			if (state.hovered || state.dragging) continue;
 
+			// Get current angle bounds based on viewport and radius
+			const bounds = getAngleBounds(state.radius, viewportWidth);
+
 			// Normalize angular speed by radius for consistent linear thumb speed
 			// angularSpeed = linearSpeed / radius (converted to degrees)
 			const angularSpeed = (state.baseSpeed / state.radius) * (180 / Math.PI);
 			state.angle += state.direction * angularSpeed;
 
-			// Normalize to 0-360 (no bouncing at boundaries)
-			if (state.angle >= 360) state.angle -= 360;
-			if (state.angle < 0) state.angle += 360;
+			// Bounce at boundaries to keep thumb within visible viewport
+			if (state.angle >= bounds.maxAngle) {
+				state.angle = bounds.maxAngle;
+				state.direction = -1;
+			}
+			if (state.angle <= bounds.minAngle) {
+				state.angle = bounds.minAngle;
+				state.direction = 1;
+			}
 
 			updateDialRotation(i, state.angle);
 		}
