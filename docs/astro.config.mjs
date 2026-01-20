@@ -4,8 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-    site: 'https://sinasamaki.github.io',
-    base: '/ChromaDial',
+    site: 'https://chromadial.sinasamaki.com',
 	integrations: [
 		starlight({
 			title: 'ChromaDial',
