@@ -8,23 +8,7 @@ description: How to add ChromaDial to your Compose Multiplatform project.
 Add the ChromaDial dependency to your `build.gradle.kts`:
 
 ```kotlin
-dependencies {
-    implementation("com.sinasamaki:chromadial:<version>")
-}
-```
-
-## Multiplatform Configuration
-
-For Kotlin Multiplatform projects, add the dependency to your common source set:
-
-```kotlin
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("com.sinasamaki:chromadial:<version>")
-        }
-    }
-}
+implementation("com.sinasamaki:chroma-dial:1.0.0-Alpha1")
 ```
 
 ## Import
