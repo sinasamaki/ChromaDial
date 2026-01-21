@@ -62,7 +62,6 @@ import androidx.compose.ui.window.singleWindowApplication
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.StepBasedContent
 import com.sinasamaki.chroma.dial.drawEveryStep
-import kotlin.math.absoluteValue
 
 fun main() = singleWindowApplication {
 
@@ -92,9 +91,35 @@ fun main() = singleWindowApplication {
             item {
                 NutritionGoalDial()
             }
+            item {
+                DefaultDial()
+            }
         }
     }
 
+}
+
+@Composable
+fun DefaultDial() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        Text(
+            "Default",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(90f) }
+        Dial(
+            degree = degree,
+            onDegreeChanged = { degree = it },
+            modifier = Modifier.size(200.dp),
+            startDegrees = 180f,
+            sweepDegrees = 275f,
+        )
+    }
 }
 
 
