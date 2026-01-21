@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "com.sinasamaki"
-version = "1.0.0-Alpha1"
+version = "1.0.0-Alpha2"
 
 kotlin {
     // Enable explicit API mode for better library design
