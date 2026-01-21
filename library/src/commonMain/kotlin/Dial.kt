@@ -40,18 +40,18 @@ import kotlin.math.atan2
 import kotlin.math.roundToInt
 
 
-enum class RadiusMode {
+public enum class RadiusMode {
     WIDTH,
     HEIGHT
 }
 
 @Stable
-class DialState(
+public class DialState(
     initialDegree: Float,
-    val degreeRange: ClosedFloatingPointRange<Float>,
-    val steps: Int = 0,
-    val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    var onValueChangeFinished: (() -> Unit)? = null
+    public val degreeRange: ClosedFloatingPointRange<Float>,
+    public val steps: Int = 0,
+    public val radiusMode: RadiusMode = RadiusMode.WIDTH,
+    public var onValueChangeFinished: (() -> Unit)? = null
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
     private var overshotAngleState by mutableFloatStateOf(0f)
@@ -62,19 +62,19 @@ class DialState(
         require(steps >= 0) { "steps must be >= 0" }
     }
 
-    var radius: Float
+    public var radius: Float
         internal set(value) {
             radiusState = value
         }
         get() = radiusState
 
-    var thumbSize: Float
+    public var thumbSize: Float
         internal set(value) {
             thumbSizeState = value
         }
         get() = thumbSizeState
 
-    fun calculateSnappedValue(value: Float): Float {
+    public fun calculateSnappedValue(value: Float): Float {
         if (steps == 0) return value.coerceIn(degreeRange)
 
         val range = degreeRange.endInclusive - degreeRange.start
@@ -83,29 +83,29 @@ class DialState(
         return (degreeRange.start + snappedSteps * stepSize).coerceIn(degreeRange)
     }
 
-    var degree: Float
+    public var degree: Float
         set(newVal) {
             degreeState = newVal
         }
         get() = degreeState
 
-    val value: Float
+    public val value: Float
         get() {
             val range = degreeRange.endInclusive - degreeRange.start
             return if (range == 0f) 0f else (degree - degreeRange.start) / range
         }
 
-    var overshotAngle: Float
+    public var overshotAngle: Float
         set(newVal) {
             overshotAngleState = newVal
         }
         get() = overshotAngleState
 
-    var onValueChange: (Float) -> Unit = {}
+    public var onValueChange: (Float) -> Unit = {}
 }
 
 @Composable
-fun Dial(
+public fun Dial(
     degree: Float,
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -150,7 +150,7 @@ fun Dial(
 }
 
 @Composable
-fun Dial(
+public fun Dial(
     degree: Float,
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,

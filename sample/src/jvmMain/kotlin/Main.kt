@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
 import com.sinasamaki.chroma.dial.Dial
-import com.sinasamaki.chroma.dial.StepContent
+import com.sinasamaki.chroma.dial.StepBasedContent
 import com.sinasamaki.chroma.dial.drawEveryStep
 import kotlin.math.absoluteValue
 
@@ -257,7 +257,7 @@ fun CameraModeDial() {
                             }
                         }
                 )
-                StepContent(
+                StepBasedContent(
                     modifier = Modifier
                         .graphicsLayer {
                             rotationZ = it.degree
@@ -567,7 +567,7 @@ fun TimerDial() {
                     }
 
                 }
-                StepContent(
+                StepBasedContent(
                     modifier = Modifier
                         .graphicsLayer {
                             rotationZ = it.degree

@@ -14,6 +14,9 @@ group = "com.sinasamaki"
 version = "1.0.0-Alpha1"
 
 kotlin {
+    // Enable explicit API mode for better library design
+    explicitApi()
+
     jvm()
     androidLibrary {
         namespace = "com.sinasamaki.chroma.dial"
@@ -41,10 +44,13 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
+            // Public API dependencies - these types are exposed in Dial's public API
+            api(compose.runtime)      // @Composable, @Stable, State
+            api(compose.foundation)   // MutableInteractionSource
+            api(compose.ui)           // Modifier
+
+            // Internal implementation dependencies - not exposed in public API
             implementation(compose.material)
-            implementation(compose.ui)
             implementation(compose.materialIconsExtended)
         }
 
@@ -57,6 +63,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
         }
     }
+
 }
 
 mavenPublishing {

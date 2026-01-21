@@ -6,16 +6,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -23,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.atan2
 
-fun DrawScope.drawEveryStep(
+public fun DrawScope.drawEveryStep(
     dialState: DialState,
     steps: Int,
     padding: Dp = 0.dp,
@@ -78,7 +75,7 @@ fun DrawScope.drawEveryStep(
     }
 }
 
-fun DrawScope.drawEveryStep(
+public fun DrawScope.drawEveryStep(
     degreeRange: ClosedFloatingPointRange<Float>,
     radius: Float,
     steps: Int,
@@ -140,7 +137,7 @@ fun DrawScope.drawEveryStep(
 }
 
 @Composable
-fun StepContent(
+public fun StepBasedContent(
     modifier: Modifier = Modifier,
     degreeRange: ClosedFloatingPointRange<Float>,
     radius: Float? = null,
