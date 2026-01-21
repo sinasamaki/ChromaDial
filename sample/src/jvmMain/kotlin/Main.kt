@@ -111,7 +111,9 @@ fun ProgressGaugeDial() {
             fontWeight = FontWeight.Medium,
             fontFamily = FontFamily.Monospace,
         )
-        var degree by remember { mutableFloatStateOf(360f) }
+        // With startDegrees=270, sweepDegrees=180, degree now goes from 0 to 180
+        // Initial 90f is the midpoint (was 360f when using absolute degrees)
+        var degree by remember { mutableFloatStateOf(90f) }
         Dial(
             degree = degree,
             onDegreeChanged = { degree = it },
@@ -211,7 +213,9 @@ fun CameraModeDial() {
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
-        var degree by remember { mutableFloatStateOf(0f) }
+        // With startDegrees=-90, sweepDegrees=220, degree now goes from 0 to 220
+        // Initial 90f corresponds to absolute 0 degrees (12 o'clock position)
+        var degree by remember { mutableFloatStateOf(90f) }
         val animatedDegree by animateFloatAsState(
             targetValue = degree,
             animationSpec = spring(
@@ -260,7 +264,7 @@ fun CameraModeDial() {
                 StepBasedContent(
                     modifier = Modifier
                         .graphicsLayer {
-                            rotationZ = it.degree
+                            rotationZ = it.absoluteDegree
                         }
                         .fillMaxSize()
                         .padding(20.dp),
@@ -404,7 +408,10 @@ fun TimerDial() {
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
-        var degree by remember { mutableFloatStateOf(0f) }
+        // With startDegrees=-1440, sweepDegrees=1440, degree now goes from 0 to 1440
+        // Initial 1440f is at the end of range (0 minutes), was 0f when using absolute degrees
+        val sweepDegrees = 360f * 4
+        var degree by remember { mutableFloatStateOf(sweepDegrees) }
         val animatedDegree by animateFloatAsState(
             targetValue = degree,
             animationSpec = spring(
@@ -412,7 +419,8 @@ fun TimerDial() {
             )
         )
 
-        val totalMinutes = (degree.absoluteValue / 6).toInt()
+        // Minutes calculation: at degree=sweepDegrees (1440), minutes=0; at degree=0, minutes=240
+        val totalMinutes = ((sweepDegrees - degree) / 6).toInt()
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60
 
@@ -457,7 +465,9 @@ fun TimerDial() {
                                 radius = (size.width / 2) - (strokeWidth / 2).toPx(),
                             )
 
-                            val numRings = (it.degree.absoluteValue / 360).toInt()
+                            // Calculate elapsed degrees from the end of range
+                            val elapsedDegrees = sweepDegrees - it.degree
+                            val numRings = (elapsedDegrees / 360).toInt()
                             val baseRadius = (size.width / 2)
                             val ringSpacing = 3.dp.toPx()
 
@@ -476,7 +486,8 @@ fun TimerDial() {
                                     )
                                 ),
                                 startAngle = -90f,
-                                sweepAngle = it.degree % 360f,
+                                // Sweep counter-clockwise (negative) based on elapsed degrees
+                                sweepAngle = -(elapsedDegrees % 360f),
                                 topLeft = rect.topLeft,
                                 size = rect.size,
                                 useCenter = false,
@@ -486,7 +497,7 @@ fun TimerDial() {
 
                             )
                             rotate(
-                                degrees = it.degree
+                                degrees = it.absoluteDegree
                             ) {
                                 drawEveryStep(
                                     degreeRange = 0f..360f,
@@ -570,7 +581,7 @@ fun TimerDial() {
                 StepBasedContent(
                     modifier = Modifier
                         .graphicsLayer {
-                            rotationZ = it.degree
+                            rotationZ = it.absoluteDegree
                         }
                         .fillMaxSize(),
                     degreeRange = 0f..360f,
@@ -746,10 +757,11 @@ fun NutritionGoalDial() {
             contentAlignment = Alignment.BottomCenter
         ) {
             // Outermost dial - Protein (Blue)
+            // With relative degrees (0 to 180), degree = (proteinGrams / 300f) * 180f
             Dial(
-                degree = (proteinGrams / 300f) * 180f + 270f,
+                degree = (proteinGrams / 300f) * 180f,
                 onDegreeChanged = {
-                    proteinGrams = ((it - 270f) / 180f * 300f).coerceIn(0f, 300f)
+                    proteinGrams = (it / 180f * 300f).coerceIn(0f, 300f)
                 },
                 modifier = Modifier.size(300.dp, 150.dp),
                 startDegrees = 270f,
@@ -826,10 +838,11 @@ fun NutritionGoalDial() {
             )
 
             // Middle dial - Carbs (Yellow)
+            // With relative degrees (0 to 180), degree = (carbsGrams / 400f) * 180f
             Dial(
-                degree = (carbsGrams / 400f) * 180f + 270f,
+                degree = (carbsGrams / 400f) * 180f,
                 onDegreeChanged = {
-                    carbsGrams = ((it - 270f) / 180f * 400f).coerceIn(0f, 400f)
+                    carbsGrams = (it / 180f * 400f).coerceIn(0f, 400f)
                 },
                 modifier = Modifier.size(240.dp, 120.dp),
                 startDegrees = 270f,
@@ -906,10 +919,11 @@ fun NutritionGoalDial() {
             )
 
             // Innermost dial - Fats (Red)
+            // With relative degrees (0 to 180), degree = (fatsGrams / 150f) * 180f
             Dial(
-                degree = (fatsGrams / 150f) * 180f + 270f,
+                degree = (fatsGrams / 150f) * 180f,
                 onDegreeChanged = {
-                    fatsGrams = ((it - 270f) / 180f * 150f).coerceIn(0f, 150f)
+                    fatsGrams = (it / 180f * 150f).coerceIn(0f, 150f)
                 },
                 modifier = Modifier.size(180.dp, 90.dp),
                 startDegrees = 270f,

@@ -26,6 +26,8 @@ public fun DrawScope.drawEveryStep(
     padding: Dp = 0.dp,
     onDraw: DrawScope.(Offset, Float, Boolean) -> Unit,
 ) {
+    // Use absolute startDegrees for arc positioning, sweep from degreeRange
+    val sweepDegrees = dialState.degreeRange.endInclusive - dialState.degreeRange.start
     val path = Path().apply {
         addArc(
             oval = Rect(
@@ -38,8 +40,8 @@ public fun DrawScope.drawEveryStep(
                     height = (dialState.radius * 2) - (padding * 2).toPx(),
                 )
             ),
-            startAngleDegrees = dialState.degreeRange.start - 90f,
-            sweepAngleDegrees = dialState.degreeRange.endInclusive - dialState.degreeRange.start,
+            startAngleDegrees = dialState.startDegrees - 90f,
+            sweepAngleDegrees = sweepDegrees,
         )
     }
     val measure = PathMeasure().apply {

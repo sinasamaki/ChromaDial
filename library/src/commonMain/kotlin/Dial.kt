@@ -51,7 +51,8 @@ public class DialState(
     public val degreeRange: ClosedFloatingPointRange<Float>,
     public val steps: Int = 0,
     public val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    public var onValueChangeFinished: (() -> Unit)? = null
+    public var onValueChangeFinished: (() -> Unit)? = null,
+    public val startDegrees: Float = 0f
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
     private var overshotAngleState by mutableFloatStateOf(0f)
@@ -61,6 +62,13 @@ public class DialState(
     init {
         require(steps >= 0) { "steps must be >= 0" }
     }
+
+    /**
+     * The absolute degree for rendering purposes.
+     * This is the actual angle on the screen (startDegrees + relative degree).
+     */
+    public val absoluteDegree: Float
+        get() = startDegrees + degree
 
     public var radius: Float
         internal set(value) {
@@ -134,12 +142,14 @@ public fun Dial(
         )
     }
 ) {
-    val degreeRange = startDegrees..(startDegrees + sweepDegrees)
+    // degreeRange is now relative: 0 to sweepDegrees
+    val degreeRange = 0f..sweepDegrees
     Dial(
         degree = degree,
         onDegreeChanged = onDegreeChanged,
         modifier = modifier,
         degreeRange = degreeRange,
+        startDegrees = startDegrees,
         radiusMode = radiusMode,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
@@ -155,6 +165,7 @@ public fun Dial(
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
     degreeRange: ClosedFloatingPointRange<Float> = 0f..360f,
+    startDegrees: Float = 0f,
     radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -178,8 +189,8 @@ public fun Dial(
         )
     }
 ) {
-    val state = remember(degreeRange, steps, radiusMode) {
-        DialState(degree, degreeRange, steps, radiusMode, onValueChangeFinished)
+    val state = remember(degreeRange, steps, radiusMode, startDegrees) {
+        DialState(degree, degreeRange, steps, radiusMode, onValueChangeFinished, startDegrees)
     }
     state.onValueChangeFinished = onValueChangeFinished
     state.onValueChange = onDegreeChanged
@@ -245,7 +256,7 @@ private fun Dial(
                 }
                 .hoverable(interactionSource)
                 .graphicsLayer {
-                    rotationZ = state.degree
+                    rotationZ = state.absoluteDegree
                     transformOrigin = TransformOrigin(0.5f, transformOriginY)
                 },
             content = { thumb(state) }
@@ -259,7 +270,7 @@ private fun Dial(
                     .align(Alignment.TopCenter)
                     .graphicsLayer {
                         // Calculate position based on touchAngle instead of rotating
-                        val angleInRadians = (state.degree - 90f) * PI.toFloat() / 180f
+                        val angleInRadians = (state.absoluteDegree - 90f) * PI.toFloat() / 180f
                         val thumbRadius =
                             state.radius - state.thumbSize / 2f // Offset halfway inwards by thumb size
 

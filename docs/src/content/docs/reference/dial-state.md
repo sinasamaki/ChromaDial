@@ -14,7 +14,8 @@ class DialState(
     val degreeRange: ClosedFloatingPointRange<Float>,
     val steps: Int = 0,
     val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    var onValueChangeFinished: (() -> Unit)? = null
+    var onValueChangeFinished: (() -> Unit)? = null,
+    val startDegrees: Float = 0f
 )
 ```
 
@@ -48,19 +49,36 @@ How to calculate the radius from the dial's constraints.
 
 Callback invoked when dragging ends.
 
+### startDegrees
+**Type:** `Float`
+**Default:** `0f`
+
+The absolute starting angle for the dial arc in screen coordinates. Used internally for positioning the thumb and track.
+
 ## Properties
 
 ### degree
 **Type:** `Float` (read/write)
 
-The current rotation angle in degrees. This is the primary state value.
+The current rotation angle in degrees, **relative to `startDegrees`**. This value ranges from `degreeRange.start` to `degreeRange.endInclusive` (typically `0` to `sweepDegrees`).
 
 ```kotlin
-// Reading
+// Reading the relative angle
 val currentAngle = state.degree
 
 // Writing (typically done internally)
 state.degree = 90f
+```
+
+### absoluteDegree
+**Type:** `Float` (read-only)
+
+The absolute rotation angle in screen coordinates. Calculated as `startDegrees + degree`. Use this for drawing operations that need the actual screen angle.
+
+```kotlin
+// For a dial with startDegrees=270f and degree=90f:
+// absoluteDegree = 360f (pointing upward)
+val screenAngle = state.absoluteDegree
 ```
 
 ### value
@@ -83,12 +101,17 @@ value = (degree - degreeRange.start) / (degreeRange.endInclusive - degreeRange.s
 ### degreeRange
 **Type:** `ClosedFloatingPointRange<Float>` (read-only)
 
-The allowed rotation range, as specified during construction.
+The allowed range for the `degree` property. When using the simple API (`startDegrees`/`sweepDegrees`), this is `0f..sweepDegrees`.
 
 ```kotlin
-val startAngle = state.degreeRange.start
-val endAngle = state.degreeRange.endInclusive
-val totalSweep = endAngle - startAngle
+// Get the sweep angle (total rotation range)
+val totalSweep = state.degreeRange.endInclusive - state.degreeRange.start
+
+// Check if degree is at start
+val isAtStart = state.degree == state.degreeRange.start
+
+// Check if degree is at end
+val isAtEnd = state.degree == state.degreeRange.endInclusive
 ```
 
 ### steps
@@ -210,13 +233,14 @@ track = { state ->
                 // Use radius for drawing
                 val arcRadius = state.radius - state.thumbSize / 2
 
-                // Use degreeRange for arc bounds
-                val startAngle = state.degreeRange.start - 90f
+                // Use startDegrees for arc positioning (absolute screen angle)
+                val startAngle = state.startDegrees - 90f
                 val sweepAngle = state.degreeRange.endInclusive - state.degreeRange.start
 
-                // Use degree for progress
-                val progress = state.degree - state.degreeRange.start
+                // Use degree for progress (relative to start)
+                val progress = state.degree
 
+                // Draw background arc
                 drawArc(
                     color = Color.Gray,
                     startAngle = startAngle,
@@ -224,6 +248,7 @@ track = { state ->
                     // ...
                 )
 
+                // Draw progress arc
                 drawArc(
                     color = Color.Blue,
                     startAngle = startAngle,

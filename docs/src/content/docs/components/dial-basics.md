@@ -25,26 +25,29 @@ ChromaDial provides two overloaded versions of the `Dial` composable:
 
 ### Simple API (startDegrees + sweepDegrees)
 
-Use this when you want to define an arc starting from a specific angle:
+Use this when you want to define an arc starting from a specific angle. The `degree` parameter will range from `0` to `sweepDegrees`.
 
 ```kotlin
+// degree ranges from 0 to 180
 Dial(
-    degree = degree,
+    degree = degree,           // 0 = at startDegrees, 180 = at startDegrees + sweepDegrees
     onDegreeChanged = { degree = it },
-    startDegrees = 270f,    // Start at 9 o'clock position
-    sweepDegrees = 180f,    // Sweep 180 degrees (half circle)
+    startDegrees = 270f,       // Arc starts at 9 o'clock position
+    sweepDegrees = 180f,       // Arc sweeps 180 degrees (half circle)
 )
 ```
 
-### Advanced API (degreeRange)
+### Advanced API (degreeRange + startDegrees)
 
-Use this for precise control over the allowed rotation range:
+Use this for precise control over the allowed rotation range. Combine with `startDegrees` to position the arc:
 
 ```kotlin
+// degree ranges from 0 to 270
 Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
-    degreeRange = 135f..405f,  // Custom range
+    degreeRange = 0f..270f,    // Allowed range for degree
+    startDegrees = 135f,       // Arc starts at bottom-left
 )
 ```
 
@@ -53,15 +56,18 @@ Dial(
 ### degree
 **Type:** `Float`
 
-The current rotation angle of the dial in degrees. This is the controlled state value that determines where the thumb is positioned.
+The current rotation angle of the dial in degrees, **relative to `startDegrees`**. This value ranges from `0` to `sweepDegrees`.
 
-- `0f` points upward (12 o'clock)
-- `90f` points right (3 o'clock)
-- `180f` points down (6 o'clock)
-- `270f` points left (9 o'clock)
+- `0f` is at the start position (determined by `startDegrees`)
+- `sweepDegrees` is at the end position
+- Intermediate values represent positions along the arc
 
 ```kotlin
-var degree by remember { mutableFloatStateOf(90f) }  // Start at 3 o'clock
+// For a dial with startDegrees=0f, sweepDegrees=360f:
+var degree by remember { mutableFloatStateOf(90f) }  // 90° into the range (3 o'clock)
+
+// For a dial with startDegrees=270f, sweepDegrees=180f (top semi-circle):
+var degree by remember { mutableFloatStateOf(90f) }  // Midpoint of the arc
 ```
 
 ### onDegreeChanged
@@ -92,7 +98,7 @@ modifier = Modifier.size(200.dp, 100.dp)  // Semi-circle
 ### startDegrees
 **Type:** `Float`
 
-The starting angle of the allowed rotation range. Used with `sweepDegrees`.
+The starting angle of the arc in absolute screen coordinates. This determines where the dial's track begins visually.
 
 - `0f` - Top (12 o'clock)
 - `90f` - Right (3 o'clock)
@@ -100,30 +106,43 @@ The starting angle of the allowed rotation range. Used with `sweepDegrees`.
 - `270f` - Left (9 o'clock)
 
 ```kotlin
-startDegrees = 270f  // Start at 9 o'clock
+startDegrees = 270f  // Arc starts at 9 o'clock
 ```
+
+**Note:** The `degree` parameter is always relative to this starting position. When `degree = 0f`, the thumb is at `startDegrees`.
 
 ### sweepDegrees
 **Type:** `Float`
 
-How many degrees the dial can sweep from the start position. Used with `startDegrees`.
+How many degrees the dial can sweep from the start position. The `degree` parameter ranges from `0` to `sweepDegrees`.
 
 ```kotlin
 startDegrees = 270f,
-sweepDegrees = 180f,  // Creates a top semi-circle (270° to 450°/90°)
+sweepDegrees = 180f,  // Creates a top semi-circle
+// degree ranges from 0f (at 9 o'clock) to 180f (at 3 o'clock)
 ```
 
 ### degreeRange
 **Type:** `ClosedFloatingPointRange<Float>`
 **Default:** `0f..360f`
 
-Alternative to `startDegrees`/`sweepDegrees`. Defines the exact range of allowed rotation.
+Defines the range of allowed `degree` values. Used with `startDegrees` for positioning.
 
 ```kotlin
-degreeRange = 0f..360f      // Full circle
-degreeRange = 135f..405f    // 270 degree arc
-degreeRange = -360f..360f   // Two full rotations allowed
+// Full circle starting at top (default)
+degreeRange = 0f..360f,
+startDegrees = 0f,
+
+// 270 degree arc starting at bottom-left
+degreeRange = 0f..270f,
+startDegrees = 135f,
+
+// Two full rotations (e.g., for a timer)
+degreeRange = 0f..720f,
+startDegrees = 0f,
 ```
+
+**Note:** When using the simple API (`startDegrees`/`sweepDegrees`), the `degreeRange` is automatically set to `0f..sweepDegrees`.
 
 ### radiusMode
 **Type:** `RadiusMode`
@@ -226,6 +245,9 @@ track = { state ->
 ### Full Circle Dial
 
 ```kotlin
+// degree ranges from 0 to 360
+var degree by remember { mutableFloatStateOf(0f) }
+
 Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
@@ -238,6 +260,10 @@ Dial(
 ### Semi-Circle (Top Arc)
 
 ```kotlin
+// degree ranges from 0 to 180
+// 0 = left side (9 o'clock), 180 = right side (3 o'clock)
+var degree by remember { mutableFloatStateOf(90f) }  // Start at center
+
 Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
@@ -250,6 +276,9 @@ Dial(
 ### Stepped Selector (like a camera mode dial)
 
 ```kotlin
+// degree ranges from 0 to 220
+var degree by remember { mutableFloatStateOf(90f) }  // 90° into the range
+
 Dial(
     degree = animatedDegree,  // Use animation for smooth snapping
     onDegreeChanged = { degree = it },
@@ -263,13 +292,17 @@ Dial(
 ### Multi-Rotation (like a timer)
 
 ```kotlin
+val sweepDegrees = 360f * 4  // 4 full rotations
+// degree ranges from 0 to 1440 (4 * 360)
+var degree by remember { mutableFloatStateOf(sweepDegrees) }  // Start at end
+
 Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
     modifier = Modifier.size(300.dp),
-    startDegrees = -360f * 4,   // Allow 4 counter-clockwise rotations
-    sweepDegrees = 360f * 8,    // Total 8 rotations range
-    steps = (60 * 4) - 1,       // Snap every minute
+    startDegrees = -sweepDegrees,  // Start position
+    sweepDegrees = sweepDegrees,
+    steps = (60 * 4) - 1,          // Snap every minute
 )
 ```
 
