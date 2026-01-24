@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,22 +35,31 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.ModeNight
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -93,6 +103,9 @@ fun main() = singleWindowApplication {
             }
             item {
                 DefaultDial()
+            }
+            item {
+                MinimalClock()
             }
         }
     }
@@ -1120,6 +1133,200 @@ fun NutritionGoalDial() {
             }
 
         }
+
+    }
+}
+
+
+@Composable
+fun MinimalClock() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp)
+            .background(
+                color = White
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        var minute by remember { mutableStateOf(0f) }
+        Dial(
+            degree = minute,
+            onDegreeChanged = { minute = it },
+            modifier = Modifier
+                .size(300.dp),
+            thumb = {
+                Box(
+                    Modifier.size(48.dp)
+                )
+            },
+            track = { dialState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .dropShadow(
+                            shape = CircleShape
+                        ) {
+                            radius = 40f
+                            alpha = .2f
+                        }
+                        .background(
+                            color = Zinc100,
+                            shape = CircleShape,
+                        )
+                        .drawWithContent {
+                            val path = Path()
+                            path.moveTo(center.x, center.y)
+                            path.relativeLineTo(-60f, -center.y - 10f)
+                            path.relativeLineTo(120f, 0f)
+                            path.close()
+
+                            val matrix = Matrix()
+                            matrix.rotateZ(dialState.degree)
+                            matrix.translate(-center.x, -center.y)
+                            path.transform(matrix)
+                            path.transform(Matrix().apply { translate(center.x, center.y) })
+
+                            drawCircle(
+                                color = White,
+                                radius = center.x - 1.dp.toPx(),
+                                style = Stroke(width = 2.dp.toPx())
+                            )
+
+                            clipPath(path = path) {
+                                this@drawWithContent.drawContent()
+                                drawCircle(
+                                    color = Lime200,
+                                    radius = center.x - 1.dp.toPx(),
+                                    style = Stroke(width = 2.dp.toPx())
+                                )
+                            }
+                        }
+                ) {
+                    StepBasedContent(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = Lime500,
+                                shape = CircleShape,
+                            ),
+                        degreeRange = 0f..360f,
+                        steps = 11,
+                    ) { index, pos, degree, _ ->
+                        val showNumber by remember {
+                            derivedStateOf {
+                                (dialState.degree < 180f && index != 12) ||
+                                        (dialState.degree > 180f && index != 0)
+                            }
+                        }
+                        if (showNumber)
+                            Text(
+                                text = "${index * 5}".padStart(2, '0'),
+                                modifier = Modifier
+                                    .rotate(-degree - 90f)
+//                                    .padding(top = 12.dp)
+                                    .padding(12.dp),
+                                fontSize = 24.sp,
+                                fontFamily = FontFamily.Monospace,
+                            )
+
+                    }
+                }
+            }
+        )
+
+
+        var hour by remember { mutableStateOf(0f) }
+        val animatedHour by animateFloatAsState(
+            targetValue = hour
+        )
+
+        Dial(
+            degree = animatedHour,
+            onDegreeChanged = { hour = it },
+            modifier = Modifier
+                .size(200.dp),
+            thumb = {
+                Box(
+                    Modifier.size(48.dp)
+                )
+            },
+            steps = 11,
+            track = { dialState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .dropShadow(
+                            shape = CircleShape
+                        ) {
+                            radius = 20f
+                            alpha = .2f
+                        }
+                        .background(
+                            color = Zinc100,
+                            shape = CircleShape,
+                        )
+                        .drawWithContent {
+                            val path = Path()
+                            path.moveTo(center.x, center.y)
+                            path.relativeLineTo(-60f, -center.y - 10f)
+                            path.relativeLineTo(120f, 0f)
+                            path.close()
+
+                            val matrix = Matrix()
+                            matrix.rotateZ(dialState.degree)
+                            matrix.translate(-center.x, -center.y)
+                            path.transform(matrix)
+                            path.transform(Matrix().apply { translate(center.x, center.y) })
+
+                            drawCircle(
+                                color = White,
+                                radius = center.x - 1.dp.toPx(),
+                                style = Stroke(width = 2.dp.toPx())
+                            )
+
+                            clipPath(path = path) {
+                                this@drawWithContent.drawContent()
+                                drawCircle(
+                                    color = Lime200,
+                                    radius = center.x - 1.dp.toPx(),
+                                    style = Stroke(width = 2.dp.toPx())
+                                )
+                            }
+                        }
+                ) {
+                    StepBasedContent(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = Lime500,
+                                shape = CircleShape,
+                            ),
+                        degreeRange = 0f..360f,
+                        steps = 11,
+                    ) { index, pos, degree, _ ->
+                        if (index != 0)
+                            Text(
+                                text = "$index",
+                                modifier = Modifier
+                                    .rotate(-degree - 90f)
+                                    .padding(12.dp),
+                                fontSize = 24.sp,
+                                fontFamily = FontFamily.Monospace,
+                            )
+
+                    }
+                }
+            }
+        )
+
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(
+                    color = Zinc100, shape = CircleShape,
+                )
+        )
 
     }
 }
