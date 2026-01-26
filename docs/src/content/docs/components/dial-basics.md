@@ -159,18 +159,19 @@ radiusMode = RadiusMode.HEIGHT  // Use height for radius calculation
 
 This is useful for non-square dials where you want the thumb to follow a specific dimension.
 
-### steps
-**Type:** `Int`
-**Default:** `0`
+### interval
+**Type:** `Float`
+**Default:** `0f`
 
-Number of discrete snap points between the start and end of the range. When `0`, the dial rotates continuously (smooth rotation).
+The degree interval between snap points. When `0f`, the dial rotates continuously (smooth rotation). When set to a value like `15f`, the dial will snap to positions every 15 degrees.
 
 ```kotlin
-steps = 0   // Continuous rotation (no snapping)
-steps = 10  // 11 snap points (start + 10 steps + end = 12 positions)
+interval = 0f   // Continuous rotation (no snapping)
+interval = 15f  // Snap every 15 degrees
+interval = 30f  // Snap every 30 degrees (like an hour hand on a clock)
 ```
 
-The formula for total positions is: `steps + 2` (includes start and end positions).
+The end of the range is always a valid snap point, even if the interval doesn't divide evenly into the range. This ensures the dial can always reach its maximum value.
 
 ### onValueChangeFinished
 **Type:** `(() -> Unit)?`
@@ -285,7 +286,7 @@ Dial(
     modifier = Modifier.size(200.dp),
     startDegrees = -90f,
     sweepDegrees = 220f,
-    steps = 10,  // 12 selectable positions
+    interval = 20f,  // Snap every 20 degrees (11 positions plus the end)
 )
 ```
 
@@ -302,7 +303,7 @@ Dial(
     modifier = Modifier.size(300.dp),
     startDegrees = -sweepDegrees,  // Start position
     sweepDegrees = sweepDegrees,
-    steps = (60 * 4) - 1,          // Snap every minute
+    interval = 6f,                 // Snap every 6 degrees (1 minute = 6°)
 )
 ```
 

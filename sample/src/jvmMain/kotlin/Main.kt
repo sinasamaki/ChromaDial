@@ -276,7 +276,7 @@ fun CameraModeDial() {
             modifier = Modifier.size(200.dp),
             startDegrees = -90f,
             sweepDegrees = 220f,
-            steps = 10,
+            interval = 20f,
             thumb = {
                 Box(
                     Modifier.fillMaxSize()
@@ -490,7 +490,7 @@ fun TimerDial() {
             modifier = Modifier.fillMaxWidth().aspectRatio(1f),
             startDegrees = -360f * 4,
             sweepDegrees = 360f * 4,
-            steps = (60 * 4) - 1,
+            interval = 6f,
             thumb = {
                 Box(
                     Modifier.fillMaxSize()
@@ -1260,7 +1260,7 @@ fun MinimalClock() {
                     Modifier.size(48.dp)
                 )
             },
-            steps = 11,
+            interval = 30f,
             track = { dialState ->
                 Box(
                     modifier = Modifier
@@ -1533,7 +1533,7 @@ fun AmPmShadowClock() {
                     Modifier.size(48.dp)
                 )
             },
-            steps = 11,
+            interval = 30f,
             track = { dialState ->
                 Box(
                     modifier = Modifier

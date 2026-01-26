@@ -95,7 +95,7 @@ track = { state ->
             .drawBehind {
                 drawEveryStep(
                     dialState = state,
-                    steps = 12,
+                    steps = 12,  // Number of tick marks to draw
                     padding = 16.dp,
                 ) { position, degrees, inActiveRange ->
                     rotate(degrees, pivot = position) {
@@ -177,7 +177,7 @@ track = { state ->
     StepContent(
         modifier = Modifier.fillMaxSize(),
         degreeRange = state.degreeRange,
-        steps = 10,
+        steps = 10,  // Number of positions to place content at
     ) { index, position, degree, inActiveRange ->
         Text(
             text = "$index",
@@ -205,7 +205,7 @@ val animatedDegree by animateFloatAsState(
 Dial(
     degree = animatedDegree,
     onDegreeChanged = { degree = it },
-    steps = 10,  // Combine with steps for bouncy snapping
+    interval = 30f,  // Combine with interval for bouncy snapping
 )
 ```
 

@@ -12,7 +12,7 @@ description: API reference for the DialState class.
 class DialState(
     initialDegree: Float,
     val degreeRange: ClosedFloatingPointRange<Float>,
-    val steps: Int = 0,
+    val interval: Float = 0f,
     val radiusMode: RadiusMode = RadiusMode.WIDTH,
     var onValueChangeFinished: (() -> Unit)? = null,
     val startDegrees: Float = 0f
@@ -31,11 +31,11 @@ The initial rotation angle in degrees.
 
 The allowed range of rotation. The dial will clamp values to this range.
 
-### steps
-**Type:** `Int`
-**Default:** `0`
+### interval
+**Type:** `Float`
+**Default:** `0f`
 
-Number of discrete snap points. When `0`, rotation is continuous.
+The degree interval between snap points. When `0f`, rotation is continuous. When set to a value like `15f`, the dial snaps every 15 degrees. The end of the range is always a valid snap point.
 
 ### radiusMode
 **Type:** `RadiusMode`
@@ -114,10 +114,10 @@ val isAtStart = state.degree == state.degreeRange.start
 val isAtEnd = state.degree == state.degreeRange.endInclusive
 ```
 
-### steps
-**Type:** `Int` (read-only)
+### interval
+**Type:** `Float` (read-only)
 
-Number of discrete snap points, as specified during construction.
+The degree interval between snap points, as specified during construction. When `0f`, the dial rotates continuously.
 
 ### radiusMode
 **Type:** `RadiusMode` (read-only)
@@ -178,13 +178,15 @@ Calculates the nearest snap position for a given degree value. Used internally t
 **Returns:** The snapped degree value, clamped to the degree range
 
 **Behavior:**
-- If `steps == 0`, returns the value clamped to the range (no snapping)
-- Otherwise, returns the nearest step position
+- If `interval == 0f`, returns the value clamped to the range (no snapping)
+- Otherwise, returns the nearest snap position based on the interval
+- The end of the range is always a valid snap point, even if the interval doesn't divide evenly
 
 ```kotlin
-// With steps = 4 and degreeRange = 0f..360f
-// Step positions: 0°, 72°, 144°, 216°, 288°, 360°
-state.calculateSnappedValue(100f)  // Returns 72f or 144f (nearest)
+// With interval = 30f and degreeRange = 0f..100f
+// Snap positions: 0°, 30°, 60°, 90°, 100° (end is always valid)
+state.calculateSnappedValue(85f)  // Returns 90f (nearest regular snap)
+state.calculateSnappedValue(96f)  // Returns 100f (end of range)
 ```
 
 ## Callbacks

@@ -57,7 +57,7 @@ public enum class RadiusMode {
 public class DialState(
     initialDegree: Float,
     public val degreeRange: ClosedFloatingPointRange<Float>,
-    public val steps: Int = 0,
+    public val interval: Float = 0f,
     public val radiusMode: RadiusMode = RadiusMode.WIDTH,
     public var onValueChangeFinished: (() -> Unit)? = null,
     public val startDegrees: Float = 0f
@@ -68,7 +68,7 @@ public class DialState(
     private var thumbSizeState by mutableFloatStateOf(0f)
 
     init {
-        require(steps >= 0) { "steps must be >= 0" }
+        require(interval >= 0f) { "interval must be >= 0" }
     }
 
     /**
@@ -91,12 +91,20 @@ public class DialState(
         get() = thumbSizeState
 
     public fun calculateSnappedValue(value: Float): Float {
-        if (steps == 0) return value.coerceIn(degreeRange)
+        if (interval == 0f) return value.coerceIn(degreeRange)
 
-        val range = degreeRange.endInclusive - degreeRange.start
-        val stepSize = range / (steps + 1)
-        val snappedSteps = ((value - degreeRange.start) / stepSize).roundToInt()
-        return (degreeRange.start + snappedSteps * stepSize).coerceIn(degreeRange)
+        val coercedValue = value.coerceIn(degreeRange)
+        val relativeValue = coercedValue - degreeRange.start
+
+        // Find nearest regular snap point based on interval
+        val snappedIndex = (relativeValue / interval).roundToInt()
+        val regularSnap = (degreeRange.start + snappedIndex * interval).coerceIn(degreeRange)
+
+        // The end of range is always a valid snap point, even if not aligned with interval
+        val distToRegularSnap = kotlin.math.abs(coercedValue - regularSnap)
+        val distToEnd = kotlin.math.abs(coercedValue - degreeRange.endInclusive)
+
+        return if (distToEnd < distToRegularSnap) degreeRange.endInclusive else regularSnap
     }
 
     public var degree: Float
@@ -130,7 +138,7 @@ public fun Dial(
     radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    steps: Int = 0,
+    interval: Float = 0f,
     thumb: @Composable (DialState) -> Unit = { state -> DefaultDialThumb(state) },
     track: @Composable (DialState) -> Unit = { state -> DefaultDialTrack(state) }
 ) {
@@ -145,7 +153,7 @@ public fun Dial(
         radiusMode = radiusMode,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
-        steps = steps,
+        interval = interval,
         thumb = thumb,
         track = track
     )
@@ -161,12 +169,12 @@ public fun Dial(
     radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    steps: Int = 0,
+    interval: Float = 0f,
     thumb: @Composable (DialState) -> Unit = { state -> DefaultDialThumb(state) },
     track: @Composable (DialState) -> Unit = { state -> DefaultDialTrack(state) }
 ) {
-    val state = remember(degreeRange, steps, radiusMode, startDegrees) {
-        DialState(degree, degreeRange, steps, radiusMode, onValueChangeFinished, startDegrees)
+    val state = remember(degreeRange, interval, radiusMode, startDegrees) {
+        DialState(degree, degreeRange, interval, radiusMode, onValueChangeFinished, startDegrees)
     }
     state.onValueChangeFinished = onValueChangeFinished
     state.onValueChange = onDegreeChanged
