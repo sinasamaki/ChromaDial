@@ -230,11 +230,11 @@ private fun Dial(
                     // Measure the thumb size and store it in state
                     state.thumbSize = coordinates.size.width.toFloat()
                 }
-                .hoverable(interactionSource)
                 .graphicsLayer {
                     rotationZ = state.absoluteDegree
                     transformOrigin = TransformOrigin(0.5f, transformOriginY)
-                },
+                }
+                .hoverable(interactionSource),
             content = { thumb(state) }
         )
 
@@ -284,6 +284,7 @@ private fun Dial(
                         var dragInteraction: Interaction? = null
                         detectDragGestures(
                             onDragStart = { offset ->
+                                draggingAngle = state.degree
                                 dragOffset = offset + thumbPosition
                                 previousAngle = calculateAngle(dragOffset)
                                 val interaction = DragInteraction.Start()
