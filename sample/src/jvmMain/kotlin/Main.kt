@@ -9,6 +9,9 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +30,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Api
@@ -35,6 +39,7 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.ModeNight
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -48,7 +53,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -56,6 +60,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -63,6 +68,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -106,6 +112,9 @@ fun main() = singleWindowApplication {
             }
             item {
                 MinimalClock()
+            }
+            item {
+                AmPmShadowClock()
             }
         }
     }
@@ -1330,3 +1339,222 @@ fun MinimalClock() {
 
     }
 }
+
+
+@Composable
+fun AmPmShadowClock() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp)
+            .background(
+                color = White
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(250.dp)
+                .drawBehind {
+                    drawCircle(
+                        color = Yellow400.copy(alpha = 1f),
+                    )
+                    drawCircle(
+                        color = Yellow200,
+                        radius = center.x - 1.dp.toPx(),
+                        style = Stroke(width = 4.dp.toPx())
+                    )
+                }
+        )
+
+
+        var amPm by remember { mutableStateOf(0f) }
+        val animatedAmPm by animateFloatAsState(
+            targetValue = amPm
+        )
+
+        val interaction = remember { MutableInteractionSource() }
+        val isDragging by interaction.collectIsDraggedAsState()
+
+        LaunchedEffect(isDragging) {
+            if (!isDragging) {
+                amPm = if (amPm < 180f) 90f else 270f
+            }
+        }
+
+        Dial(
+            degree = animatedAmPm,
+            onDegreeChanged = { amPm = it },
+            interactionSource = interaction,
+            modifier = Modifier
+                .size(400.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures {
+                        amPm = if (amPm > 180f) 90f else 270f
+                    }
+                },
+            thumb = {
+                Box(
+                    Modifier
+                        .offset(y = -10.dp)
+                        .size(280.dp)
+//                        .size(40.dp)
+                        .border(
+                            width = 4.dp,
+                            shape = CircleShape,
+                            color = Zinc600,
+                        )
+                        .background(
+                            color = Zinc900,
+                            shape = CircleShape,
+                        )
+                )
+            },
+            track = { dialState ->
+
+            }
+        )
+
+        Box(
+            modifier = Modifier
+                .size(250.dp)
+                .clip(CircleShape)
+                .pointerInput(Unit) {}
+        )
+
+        Box(
+            Modifier
+                .size(400.dp)
+                .padding(12.dp)
+        ) {
+            Text(
+                text = "PM",
+                modifier = Modifier
+                    .align(Alignment.CenterStart),
+                color = White,
+                fontSize = 28.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+            Text(
+                text = "AM",
+                modifier = Modifier
+                    .align(Alignment.CenterEnd),
+                color = White,
+                fontSize = 28.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+
+
+        var minute by remember { mutableStateOf(0f) }
+        Dial(
+            degree = minute,
+            onDegreeChanged = { minute = it },
+            modifier = Modifier
+                .size(250.dp),
+            thumb = {
+                Box(
+                    Modifier.size(52.dp)
+                )
+            },
+            track = { dialState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawWithContent {
+//                            drawCircle(
+//                                color = Yellow400.copy(alpha = .2f),
+//                            )
+//                            drawCircle(
+//                                color = Zinc200,
+//                                radius = center.x - 1.dp.toPx(),
+//                                style = Stroke(width = 2.dp.toPx())
+//                            )
+                            drawContent()
+                            rotate(
+                                degrees = minute
+                            ) {
+                                drawLine(
+                                    color = Zinc200,
+                                    start = center,
+                                    strokeWidth = 10f,
+                                    cap = StrokeCap.Round,
+                                    end = Offset(center.x, 36.dp.toPx())
+                                )
+                            }
+                        }
+                )
+            }
+        )
+
+
+        StepBasedContent(
+            modifier = Modifier
+                .size(250.dp),
+            degreeRange = 0f..360f,
+            steps = 11,
+        ) { index, pos, degree, _ ->
+            if (index != 0)
+                Text(
+                    text = "${index}",
+                    modifier = Modifier
+                        .rotate(-degree - 90f)
+//                                    .padding(top = 12.dp)
+                        .padding(12.dp),
+                    fontSize = 18.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = Zinc200,
+                    style = LocalTextStyle.current.copy(
+                        shadow = Shadow(
+                            color = Black,
+                            offset = Offset(1f, 1f),
+                            blurRadius = 10f
+                        )
+                    )
+                )
+
+        }
+
+
+
+        var hour by remember { mutableStateOf(0f) }
+        val animatedHour by animateFloatAsState(
+            targetValue = hour
+        )
+
+        Dial(
+            degree = animatedHour,
+            onDegreeChanged = { hour = it },
+            modifier = Modifier
+                .size(200.dp),
+            thumb = {
+                Box(
+                    Modifier.size(48.dp)
+                )
+            },
+            steps = 11,
+            track = { dialState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            rotate(
+                                degrees = animatedHour
+                            ) {
+                                drawLine(
+                                    color = Zinc200,
+                                    start = center,
+                                    strokeWidth = 10f,
+                                    cap = StrokeCap.Round,
+                                    end = Offset(center.x, 32.dp.toPx())
+                                )
+                            }
+                        }
+                ) {
+                }
+            }
+        )
+    }
+}
+
