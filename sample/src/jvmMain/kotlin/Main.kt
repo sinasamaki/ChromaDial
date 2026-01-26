@@ -76,8 +76,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.singleWindowApplication
 import com.sinasamaki.chroma.dial.Dial
-import com.sinasamaki.chroma.dial.StepBasedContent
-import com.sinasamaki.chroma.dial.drawEveryStep
+import com.sinasamaki.chroma.dial.DialInterval
+import com.sinasamaki.chroma.dial.drawEveryInterval
 
 fun main() = singleWindowApplication {
 
@@ -201,34 +201,34 @@ fun ProgressGaugeDial() {
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-
-                            drawEveryStep(
+                            // interval = 180 / 51 ≈ 3.53° to get ~52 positions (same as steps=50)
+                            drawEveryInterval(
                                 dialState = it,
-                                steps = 50,
+                                interval = 180f / 51f,
                                 padding = (16).dp,
-                            ) { position, degrees, inActiveRange ->
+                            ) { data ->
                                 drawCircle(
                                     color = Zinc800,
                                     radius = 2f,
-                                    center = position,
+                                    center = data.position,
                                 )
 
                                 rotate(
-                                    degrees = degrees,
-                                    pivot = position,
+                                    degrees = data.degree,
+                                    pivot = data.position,
                                 ) {
                                     drawLine(
                                         brush = Brush.verticalGradient(
                                             colors = listOf(
-                                                if (inActiveRange) Yellow200 else Zinc700,
-                                                if (inActiveRange) Green500 else Zinc800,
-                                                if (inActiveRange) Yellow200 else Zinc700,
+                                                if (data.inActiveRange) Yellow200 else Zinc700,
+                                                if (data.inActiveRange) Green500 else Zinc800,
+                                                if (data.inActiveRange) Yellow200 else Zinc700,
                                             ),
-                                            startY = position.y + 20f,
-                                            endY = position.y - 20f,
+                                            startY = data.position.y + 20f,
+                                            endY = data.position.y - 20f,
                                         ),
-                                        start = position + Offset(0f, 20f),
-                                        end = position - Offset(0f, 20f),
+                                        start = data.position + Offset(0f, 20f),
+                                        end = data.position - Offset(0f, 20f),
                                         strokeWidth = 1.dp.toPx()
                                     )
                                 }
@@ -287,28 +287,29 @@ fun CameraModeDial() {
                     Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            drawEveryStep(
+                            // interval = 4° to get ~46 positions over 180° range (same as steps=45)
+                            drawEveryInterval(
                                 degreeRange = -180f..0f,
-                                steps = 45,
+                                interval = 4f,
                                 radius = it.radius,
-                            ) { position, degrees, _ ->
+                            ) { data ->
                                 rotate(
-                                    degrees,
-                                    pivot = position
+                                    data.degree,
+                                    pivot = data.position
                                 ) {
                                     drawLine(
                                         color = White,
-                                        start = position,
-                                        end = position + Offset(
+                                        start = data.position,
+                                        end = data.position + Offset(
                                             0f,
-                                            if (degrees in (-91f)..(-89f)) 30f else 10f
+                                            if (data.degree in (-91f)..(-89f)) 30f else 10f
                                         )
                                     )
                                 }
                             }
                         }
                 )
-                StepBasedContent(
+                DialInterval(
                     modifier = Modifier
                         .graphicsLayer {
                             rotationZ = it.absoluteDegree
@@ -316,8 +317,8 @@ fun CameraModeDial() {
                         .fillMaxSize()
                         .padding(20.dp),
                     degreeRange = -220f..0f,
-                    steps = 10,
-                ) { index, position, degree, _ ->
+                    interval = 20f,  // 220 / 11 = 20° to get 12 positions (same as steps=10)
+                ) { data ->
                     Box(
                         modifier = Modifier
                             .graphicsLayer {
@@ -326,11 +327,11 @@ fun CameraModeDial() {
                                 )
                             }
                             .background(
-                                color = if (index == 4) Red500 else Transparent,
+                                color = if (data.index == 4) Red500 else Transparent,
                             )
                             .border(
                                 width = 1.dp,
-                                color = when (index) {
+                                color = when (data.index) {
                                     0 -> Green500
                                     4 -> Red400
                                     else -> White
@@ -338,7 +339,7 @@ fun CameraModeDial() {
                             )
                             .padding(2.dp)
                     ) {
-                        when (index) {
+                        when (data.index) {
                             0 -> Text(
                                 text = "Auto",
                                 fontSize = 8.sp,
@@ -424,7 +425,7 @@ fun CameraModeDial() {
                             )
 
                             else -> Text(
-                                text = "$index",
+                                text = "${data.index}",
                                 fontSize = 10.sp,
                                 color = White,
                                 fontFamily = FontFamily.Monospace,
@@ -546,39 +547,41 @@ fun TimerDial() {
                             rotate(
                                 degrees = it.absoluteDegree
                             ) {
-                                drawEveryStep(
+                                // interval = 30° for 13 positions around full circle (same as steps=11)
+                                drawEveryInterval(
                                     degreeRange = 0f..360f,
                                     radius = it.radius,
                                     padding = 25.dp,
-                                    steps = 11,
-                                ) { position, degree, _ ->
+                                    interval = 30f,
+                                ) { data ->
                                     rotate(
-                                        degrees = degree,
-                                        pivot = position
+                                        degrees = data.degree,
+                                        pivot = data.position
                                     ) {
                                         drawLine(
                                             color = Zinc800,
-                                            start = position,
-                                            end = position + Offset(0f, 20f),
+                                            start = data.position,
+                                            end = data.position + Offset(0f, 20f),
                                             strokeWidth = 5f,
                                             cap = StrokeCap.Round,
                                         )
                                     }
                                 }
-                                drawEveryStep(
+                                // interval = 6° for 61 positions (same as steps=59)
+                                drawEveryInterval(
                                     degreeRange = 0f..360f,
                                     radius = it.radius,
                                     padding = 25.dp,
-                                    steps = 59,
-                                ) { position, degree, _ ->
+                                    interval = 6f,
+                                ) { data ->
                                     rotate(
-                                        degrees = degree,
-                                        pivot = position
+                                        degrees = data.degree,
+                                        pivot = data.position
                                     ) {
                                         drawLine(
                                             color = Zinc800,
-                                            start = position,
-                                            end = position + Offset(0f, 10f),
+                                            start = data.position,
+                                            end = data.position + Offset(0f, 10f),
                                             strokeWidth = 3f,
                                         )
                                     }
@@ -625,7 +628,8 @@ fun TimerDial() {
                     }
 
                 }
-                StepBasedContent(
+                // interval = 30° for 13 positions (same as steps=11)
+                DialInterval(
                     modifier = Modifier
                         .graphicsLayer {
                             rotationZ = it.absoluteDegree
@@ -633,11 +637,11 @@ fun TimerDial() {
                         .fillMaxSize(),
                     degreeRange = 0f..360f,
                     radius = it.radius,
-                    steps = 11,
-                ) { index, position, degree, _ ->
-                    if (index < 12) {
+                    interval = 30f,
+                ) { data ->
+                    if (data.index < 12) {
                         Text(
-                            text = "${index * 5}",
+                            text = "${data.index * 5}",
                             modifier = Modifier
                                 .rotate(-90f)
                                 .padding(horizontal = 4.dp),
@@ -1212,7 +1216,8 @@ fun MinimalClock() {
                             }
                         }
                 ) {
-                    StepBasedContent(
+                    // interval = 30° for 13 positions (same as steps=11)
+                    DialInterval(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
@@ -1220,19 +1225,19 @@ fun MinimalClock() {
                                 shape = CircleShape,
                             ),
                         degreeRange = 0f..360f,
-                        steps = 11,
-                    ) { index, pos, degree, _ ->
+                        interval = 30f,
+                    ) { data ->
                         val showNumber by remember {
                             derivedStateOf {
-                                (dialState.degree < 180f && index != 12) ||
-                                        (dialState.degree > 180f && index != 0)
+                                (dialState.degree < 180f && data.index != 12) ||
+                                        (dialState.degree > 180f && data.index != 0)
                             }
                         }
                         if (showNumber)
                             Text(
-                                text = "${index * 5}".padStart(2, '0'),
+                                text = "${data.index * 5}".padStart(2, '0'),
                                 modifier = Modifier
-                                    .rotate(-degree - 90f)
+                                    .rotate(-data.degree - 90f)
 //                                    .padding(top = 12.dp)
                                     .padding(12.dp),
                                 fontSize = 24.sp,
@@ -1304,7 +1309,8 @@ fun MinimalClock() {
                             }
                         }
                 ) {
-                    StepBasedContent(
+                    // interval = 30° for 13 positions (same as steps=11)
+                    DialInterval(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
@@ -1312,13 +1318,13 @@ fun MinimalClock() {
                                 shape = CircleShape,
                             ),
                         degreeRange = 0f..360f,
-                        steps = 11,
-                    ) { index, pos, degree, _ ->
-                        if (index != 0)
+                        interval = 30f,
+                    ) { data ->
+                        if (data.index != 0)
                             Text(
-                                text = "$index",
+                                text = "${data.index}",
                                 modifier = Modifier
-                                    .rotate(-degree - 90f)
+                                    .rotate(-data.degree - 90f)
                                     .padding(12.dp),
                                 fontSize = 24.sp,
                                 fontFamily = FontFamily.Monospace,
@@ -1489,17 +1495,18 @@ fun AmPmShadowClock() {
         )
 
 
-        StepBasedContent(
+        // interval = 30° for 13 positions (same as steps=11)
+        DialInterval(
             modifier = Modifier
                 .size(250.dp),
             degreeRange = 0f..360f,
-            steps = 11,
-        ) { index, pos, degree, _ ->
-            if (index != 0)
+            interval = 30f,
+        ) { data ->
+            if (data.index != 0)
                 Text(
-                    text = "${index}",
+                    text = "${data.index}",
                     modifier = Modifier
-                        .rotate(-degree - 90f)
+                        .rotate(-data.degree - 90f)
 //                                    .padding(top = 12.dp)
                         .padding(12.dp),
                     fontSize = 18.sp,

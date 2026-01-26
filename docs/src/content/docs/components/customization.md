@@ -85,7 +85,7 @@ track = { state ->
 
 ### Track with Tick Marks
 
-Use the `drawEveryStep` utility to draw tick marks at step positions:
+Use the `drawEveryInterval` utility to draw tick marks at interval positions:
 
 ```kotlin
 track = { state ->
@@ -93,16 +93,16 @@ track = { state ->
         Modifier
             .fillMaxSize()
             .drawBehind {
-                drawEveryStep(
+                drawEveryInterval(
                     dialState = state,
-                    steps = 12,  // Number of tick marks to draw
+                    interval = 30f,  // Degrees between each tick mark
                     padding = 16.dp,
-                ) { position, degrees, inActiveRange ->
-                    rotate(degrees, pivot = position) {
+                ) { data ->
+                    rotate(data.degree, pivot = data.position) {
                         drawLine(
-                            color = if (inActiveRange) Color.Blue else Color.Gray,
-                            start = position,
-                            end = position + Offset(0f, 15f),
+                            color = if (data.inActiveRange) Color.Blue else Color.Gray,
+                            start = data.position,
+                            end = data.position + Offset(0f, 15f),
                             strokeWidth = 2.dp.toPx()
                         )
                     }
@@ -168,20 +168,33 @@ thumb = { state ->
 }
 ```
 
-## StepContent Composable
+## IntervalData
 
-For placing composables at step positions around the dial, use `StepContent`:
+When using `drawEveryInterval` or `DialInterval`, you receive an `IntervalData` object with:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `index` | `Int` | The index of this interval (0-based) |
+| `position` | `Offset` | Pixel position on the dial path |
+| `degree` | `Float` | Tangent angle for rotation |
+| `intervalDegree` | `Float` | Actual degree value on the dial |
+| `inActiveRange` | `Boolean` | Whether within the active range |
+| `progress` | `Float` | Normalized progress (0-1) within the range |
+
+## DialInterval Composable
+
+For placing composables at interval positions around the dial, use `DialInterval`:
 
 ```kotlin
 track = { state ->
-    StepContent(
+    DialInterval(
         modifier = Modifier.fillMaxSize(),
         degreeRange = state.degreeRange,
-        steps = 10,  // Number of positions to place content at
-    ) { index, position, degree, inActiveRange ->
+        interval = 30f,  // Degrees between each position
+    ) { data ->
         Text(
-            text = "$index",
-            color = if (inActiveRange) Color.Blue else Color.Gray,
+            text = "${data.index}",
+            color = if (data.inActiveRange) Color.Blue else Color.Gray,
             fontSize = 12.sp
         )
     }
