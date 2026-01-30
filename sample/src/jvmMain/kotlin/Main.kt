@@ -111,6 +111,15 @@ fun main() = singleWindowApplication {
                 DefaultDial()
             }
             item {
+                Over360Dial()
+            }
+            item {
+                TickedDial()
+            }
+            item {
+                MaterialDial()
+            }
+            item {
                 MinimalClock()
             }
             item {
@@ -140,6 +149,156 @@ fun DefaultDial() {
             modifier = Modifier.size(200.dp),
             startDegrees = 180f,
             sweepDegrees = 275f,
+        )
+    }
+}
+
+@Composable
+fun Over360Dial() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        Text(
+            "Over",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(90f) }
+        Dial(
+            degree = degree,
+            onDegreeChanged = { degree = it },
+            modifier = Modifier.size(200.dp),
+            startDegrees = 0f,
+            sweepDegrees = 360f * 5,
+        )
+    }
+}
+
+@Composable
+fun TickedDial() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        Text(
+            "Ticked",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(90f) }
+        Dial(
+            degree = degree,
+            onDegreeChanged = { degree = it },
+            modifier = Modifier.size(200.dp),
+            startDegrees = 180f,
+            sweepDegrees = 275f,
+            interval = 15f,
+        )
+    }
+}
+
+@Composable
+fun MaterialDial() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        Text(
+            "Material",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        var degree by remember { mutableFloatStateOf(90f) }
+        Dial(
+            degree = degree,
+            onDegreeChanged = { degree = it },
+            modifier = Modifier.size(200.dp),
+            startDegrees = 180f,
+            sweepDegrees = 275f,
+            thumb = { state ->
+                Box(
+                    Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val showThumb by remember {
+                        derivedStateOf {
+                            state.degree < state.degreeRange.endInclusive
+                        }
+                    }
+                    val scale by animateFloatAsState(
+                        targetValue = if (showThumb) 1f else 0f
+                    )
+                    Box(
+                        Modifier
+                            .offset(y = (-16).dp)
+                            .width(6.dp)
+                            .height(40.dp)
+                            .graphicsLayer {
+                                scaleY = scale
+                            }
+                            .background(
+                                color = Lime400,
+                                shape = CircleShape
+                            )
+                    )
+                }
+            },
+            track = { state ->
+                val trackWidth = 16.dp
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            val strokeWidth = trackWidth.toPx()
+                            val trackRadius = state.radius - strokeWidth / 2
+                            val startAngle = state.startDegrees - 90f
+                            val sweepRange = state.degreeRange.endInclusive - state.degreeRange.start
+                            val activeSweep = (state.degree - state.degreeRange.start) - 10f
+                            val inactiveSweep = sweepRange - activeSweep - 20f
+                            val inactiveStart = startAngle + activeSweep + 20f
+
+                            // Draw inactive track (from current position to end)
+                            if (inactiveSweep > 0f) {
+                                drawArc(
+                                    color = Violet500.copy(alpha = .2f),
+                                    startAngle = inactiveStart,
+                                    sweepAngle = inactiveSweep,
+                                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
+                                    size = Size(trackRadius * 2, trackRadius * 2),
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+
+                            // Draw active track (from start to current position)
+                            if (activeSweep > 0f) {
+                                drawArc(
+                                    color = Violet500,
+                                    startAngle = startAngle,
+                                    sweepAngle = activeSweep,
+                                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
+                                    size = Size(trackRadius * 2, trackRadius * 2),
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+
+                            // Draw stop indicator at the end of the track
+                            val endAngleRadians = (startAngle + sweepRange) * kotlin.math.PI.toFloat() / 180f
+                            val stopIndicatorX = center.x + trackRadius * kotlin.math.cos(endAngleRadians)
+                            val stopIndicatorY = center.y + trackRadius * kotlin.math.sin(endAngleRadians)
+                            drawCircle(
+                                color = Lime300,
+                                radius = 4.dp.toPx(),
+                                center = Offset(stopIndicatorX, stopIndicatorY)
+                            )
+                        }
+                )
+            }
         )
     }
 }

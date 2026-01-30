@@ -1,7 +1,5 @@
 package com.sinasamaki.chroma.dial
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -10,11 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -27,12 +21,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -43,10 +37,43 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.atan2
-import kotlin.math.cos
 import kotlin.math.roundToInt
-import kotlin.math.sin
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Color
 
+/**
+ * Colors for customizing the Dial appearance when using the simple Dial overload.
+ */
+@Immutable
+public class DialColors internal constructor(
+    public val inactiveTrackColor: Color,
+    public val activeTrackColor: Color,
+    public val thumbColor: Color,
+    public val thumbStrokeColor: Color,
+    public val inactiveTickColor: Color,
+    public val activeTickColor: Color,
+) {
+    public companion object {
+        /**
+         * Creates a [DialColors] instance with default colors.
+         */
+        public fun default(
+            inactiveTrackColor: Color = Zinc700,
+            activeTrackColor: Color = Violet500,
+            thumbColor: Color = Violet950,
+            thumbStrokeColor: Color = Violet500,
+            inactiveTickColor: Color = Zinc600,
+            activeTickColor: Color = Violet400,
+        ): DialColors = DialColors(
+            inactiveTrackColor = inactiveTrackColor,
+            activeTrackColor = activeTrackColor,
+            thumbColor = thumbColor,
+            thumbStrokeColor = thumbStrokeColor,
+            inactiveTickColor = inactiveTickColor,
+            activeTickColor = activeTickColor,
+        )
+    }
+}
 
 public enum class RadiusMode {
     WIDTH,
@@ -128,51 +155,56 @@ public class DialState(
     public var onValueChange: (Float) -> Unit = {}
 }
 
+/**
+ * Simple Dial composable with color customization.
+ * Uses the default thumb and track styles with custom colors.
+ */
 @Composable
 public fun Dial(
     degree: Float,
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    startDegrees: Float,
-    sweepDegrees: Float,
+    startDegrees: Float = 0f,
+    sweepDegrees: Float = 360f,
     radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
-    thumb: @Composable (DialState) -> Unit = { state -> DefaultDialThumb(state) },
-    track: @Composable (DialState) -> Unit = { state -> DefaultDialTrack(state) }
+    colors: DialColors = DialColors.default(),
 ) {
-    // degreeRange is now relative: 0 to sweepDegrees
-    val degreeRange = 0f..sweepDegrees
     Dial(
         degree = degree,
         onDegreeChanged = onDegreeChanged,
         modifier = modifier,
-        degreeRange = degreeRange,
         startDegrees = startDegrees,
+        sweepDegrees = sweepDegrees,
         radiusMode = radiusMode,
         onValueChangeFinished = onValueChangeFinished,
         interactionSource = interactionSource,
         interval = interval,
-        thumb = thumb,
-        track = track
+        thumb = { state -> DefaultDialThumb(state, colors) },
+        track = { state -> DefaultDialTrack(state, colors) }
     )
 }
 
+/**
+ * Dial composable with full customization via thumb and track composables.
+ */
 @Composable
 public fun Dial(
     degree: Float,
     onDegreeChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    degreeRange: ClosedFloatingPointRange<Float> = 0f..360f,
     startDegrees: Float = 0f,
+    sweepDegrees: Float = 360f,
     radiusMode: RadiusMode = RadiusMode.WIDTH,
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
-    thumb: @Composable (DialState) -> Unit = { state -> DefaultDialThumb(state) },
-    track: @Composable (DialState) -> Unit = { state -> DefaultDialTrack(state) }
+    thumb: @Composable (DialState) -> Unit,
+    track: @Composable (DialState) -> Unit,
 ) {
+    val degreeRange = 0f..sweepDegrees
     val state = remember(degreeRange, interval, radiusMode, startDegrees) {
         DialState(degree, degreeRange, interval, radiusMode, onValueChangeFinished, startDegrees)
     }
@@ -367,72 +399,63 @@ private fun Dial(
 
 /**
  * Default style thumb for the Dial component.
- * A vertical pill/capsule shape.
+ * A simple circle with stroke.
  */
 @Composable
-private fun DefaultDialThumb(state: DialState) {
+private fun DefaultDialThumb(state: DialState, colors: DialColors) {
     Box(
-        Modifier.size(48.dp),
+        Modifier.size(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        val showThumb by remember {
-            derivedStateOf {
-                state.degree < state.degreeRange.endInclusive
-            }
-        }
-        val scale by animateFloatAsState(
-            targetValue = if (showThumb) 1f else 0f
-        )
         Box(
             Modifier
-                .offset(y = (-16).dp)
-                .width(6.dp)
-                .height(40.dp)
-                .scale(1f, scale)
-                .background(
-                    color = Lime400,
-                    shape = CircleShape
-                )
+                .size(16.dp)
+                .drawBehind {
+                    drawCircle(
+                        color = colors.thumbStrokeColor,
+                        style = Stroke(width = 4.dp.toPx())
+                    )
+                    drawCircle(
+                        color = colors.thumbColor,
+                        radius = size.minDimension / 2 - 2.dp.toPx()
+                    )
+                }
         )
     }
 }
 
 /**
  * Default track for the Dial component.
- * Features an active track portion, inactive track portion, and a stop indicator.
+ * A simple arc track with active portion overlay and optional ticks.
  */
 @Composable
-private fun DefaultDialTrack(state: DialState) {
-    val trackWidth = 16.dp
+private fun DefaultDialTrack(state: DialState, colors: DialColors) {
+    val trackWidth = 4.dp
     Box(
         Modifier
             .fillMaxSize()
             .drawBehind {
                 val strokeWidth = trackWidth.toPx()
-                val trackRadius = state.radius - strokeWidth / 2
+                val trackRadius = state.radius - 12.dp.toPx()
                 val startAngle = state.startDegrees - 90f
                 val sweepRange = state.degreeRange.endInclusive - state.degreeRange.start
-                val activeSweep = (state.degree - state.degreeRange.start) - 10f
-                val inactiveSweep = sweepRange - activeSweep - 20f
-                val inactiveStart = startAngle + activeSweep + 20f
+                val activeSweep = state.degree - state.degreeRange.start
 
-                // Draw inactive track (from current position to end)
-                if (inactiveSweep > 0f) {
-                    drawArc(
-                        color = Violet500.copy(alpha = .2f),
-                        startAngle = inactiveStart,
-                        sweepAngle = inactiveSweep,
-                        topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
-                        size = Size(trackRadius * 2, trackRadius * 2),
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-                }
+                // Draw background track (full sweep)
+                drawArc(
+                    color = colors.inactiveTrackColor,
+                    startAngle = startAngle,
+                    sweepAngle = sweepRange,
+                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
+                    size = Size(trackRadius * 2, trackRadius * 2),
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
 
                 // Draw active track (from start to current position)
                 if (activeSweep > 0f) {
                     drawArc(
-                        color = Violet500,
+                        color = colors.activeTrackColor,
                         startAngle = startAngle,
                         sweepAngle = activeSweep,
                         topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
@@ -442,15 +465,32 @@ private fun DefaultDialTrack(state: DialState) {
                     )
                 }
 
-                // Draw stop indicator at the end of the track
-                val endAngleRadians = (startAngle + sweepRange) * PI.toFloat() / 180f
-                val stopIndicatorX = center.x + trackRadius * cos(endAngleRadians)
-                val stopIndicatorY = center.y + trackRadius * sin(endAngleRadians)
-                drawCircle(
-                    color = Lime300,
-                    radius = 4.dp.toPx(),
-                    center = Offset(stopIndicatorX, stopIndicatorY)
-                )
+                // Draw ticks if interval > 0
+                if (state.interval > 0f) {
+                    drawEveryInterval(
+                        dialState = state,
+                        interval = state.interval,
+                        padding = 12.dp,
+                    ) { data ->
+                        val tickColor = if (data.inActiveRange) {
+                            colors.activeTickColor
+                        } else {
+                            colors.inactiveTickColor
+                        }
+                        rotate(
+                            degrees = data.degree,
+                            pivot = data.position
+                        ) {
+                            drawLine(
+                                color = tickColor,
+                                start = data.position - Offset(0f, 4.dp.toPx()),
+                                end = data.position + Offset(0f, 4.dp.toPx()),
+                                strokeWidth = 2.dp.toPx(),
+                                cap = StrokeCap.Round,
+                            )
+                        }
+                    }
+                }
             }
     )
 }
