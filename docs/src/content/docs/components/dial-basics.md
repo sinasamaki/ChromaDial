@@ -23,31 +23,35 @@ Dial(
 
 ChromaDial provides two overloaded versions of the `Dial` composable:
 
-### Simple API (startDegrees + sweepDegrees)
+### Simple API (with DialColors)
 
-Use this when you want to define an arc starting from a specific angle. The `degree` parameter will range from `0` to `sweepDegrees`.
-
-```kotlin
-// degree ranges from 0 to 180
-Dial(
-    degree = degree,           // 0 = at startDegrees, 180 = at startDegrees + sweepDegrees
-    onDegreeChanged = { degree = it },
-    startDegrees = 270f,       // Arc starts at 9 o'clock position
-    sweepDegrees = 180f,       // Arc sweeps 180 degrees (half circle)
-)
-```
-
-### Advanced API (degreeRange + startDegrees)
-
-Use this for precise control over the allowed rotation range. Combine with `startDegrees` to position the arc:
+Use this when you want to customize colors while using the default thumb and track:
 
 ```kotlin
-// degree ranges from 0 to 270
 Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
-    degreeRange = 0f..270f,    // Allowed range for degree
-    startDegrees = 135f,       // Arc starts at bottom-left
+    startDegrees = 270f,
+    sweepDegrees = 180f,
+    colors = DialColors.default(
+        activeTrackColor = Color.Blue,
+        thumbStrokeColor = Color.Blue,
+    ),
+)
+```
+
+### Custom API (with thumb/track composables)
+
+Use this when you need full control over the thumb and track appearance:
+
+```kotlin
+Dial(
+    degree = degree,
+    onDegreeChanged = { degree = it },
+    startDegrees = 270f,
+    sweepDegrees = 180f,
+    thumb = { state -> /* custom thumb */ },
+    track = { state -> /* custom track */ },
 )
 ```
 
@@ -122,27 +126,24 @@ sweepDegrees = 180f,  // Creates a top semi-circle
 // degree ranges from 0f (at 9 o'clock) to 180f (at 3 o'clock)
 ```
 
-### degreeRange
-**Type:** `ClosedFloatingPointRange<Float>`
-**Default:** `0f..360f`
+### colors
+**Type:** `DialColors`
+**Default:** `DialColors.default()`
 
-Defines the range of allowed `degree` values. Used with `startDegrees` for positioning.
+Customize the appearance of the default thumb and track. Only available with the simple API (not with custom `thumb`/`track` composables).
 
 ```kotlin
-// Full circle starting at top (default)
-degreeRange = 0f..360f,
-startDegrees = 0f,
-
-// 270 degree arc starting at bottom-left
-degreeRange = 0f..270f,
-startDegrees = 135f,
-
-// Two full rotations (e.g., for a timer)
-degreeRange = 0f..720f,
-startDegrees = 0f,
+colors = DialColors.default(
+    inactiveTrackColor = Color.Gray,
+    activeTrackColor = Color.Blue,
+    thumbColor = Color.White,
+    thumbStrokeColor = Color.Blue,
+    inactiveTickColor = Color.Gray,
+    activeTickColor = Color.Blue,
+)
 ```
 
-**Note:** When using the simple API (`startDegrees`/`sweepDegrees`), the `degreeRange` is automatically set to `0f..sweepDegrees`.
+The default track automatically displays tick marks when `interval > 0`, using the tick colors from `DialColors`.
 
 ### radiusMode
 **Type:** `RadiusMode`
@@ -173,14 +174,14 @@ interval = 30f  // Snap every 30 degrees (like an hour hand on a clock)
 
 The end of the range is always a valid snap point, even if the interval doesn't divide evenly into the range. This ensures the dial can always reach its maximum value.
 
-### onValueChangeFinished
+### onDegreeChangeFinished
 **Type:** `(() -> Unit)?`
 **Default:** `null`
 
 Callback invoked when the user finishes dragging (lifts their finger/releases mouse). Useful for committing changes or triggering actions.
 
 ```kotlin
-onValueChangeFinished = {
+onDegreeChangeFinished = {
     saveSettings(degree)
 }
 ```
@@ -203,10 +204,10 @@ Dial(
 // isDragging is true while user is dragging
 ```
 
-### thumb
+### thumb (Custom API only)
 **Type:** `@Composable (DialState) -> Unit`
 
-Custom composable for the draggable handle. Receives `DialState` with information about the dial's current state.
+Custom composable for the draggable handle. Receives `DialState` with information about the dial's current state. Only available when using the custom API overload.
 
 ```kotlin
 thumb = { state ->
@@ -220,10 +221,10 @@ thumb = { state ->
 
 See [Customization](/components/customization/) for advanced examples.
 
-### track
+### track (Custom API only)
 **Type:** `@Composable (DialState) -> Unit`
 
-Custom composable for the background track. Receives `DialState` to draw progress arcs or tick marks.
+Custom composable for the background track. Receives `DialState` to draw progress arcs or tick marks. Only available when using the custom API overload.
 
 ```kotlin
 track = { state ->
@@ -292,6 +293,8 @@ Dial(
 
 ### Multi-Rotation (like a timer)
 
+When `sweepDegrees` exceeds 360, the default track displays multiple rings. Completed rotations scale outward with animated transitions and decreasing alpha.
+
 ```kotlin
 val sweepDegrees = 360f * 4  // 4 full rotations
 // degree ranges from 0 to 1440 (4 * 360)
@@ -301,13 +304,34 @@ Dial(
     degree = degree,
     onDegreeChanged = { degree = it },
     modifier = Modifier.size(300.dp),
-    startDegrees = -sweepDegrees,  // Start position
+    startDegrees = 0f,
     sweepDegrees = sweepDegrees,
-    interval = 6f,                 // Snap every 6 degrees (1 minute = 6°)
+    interval = 6f,  // Snap every 6 degrees (1 minute = 6°)
+)
+```
+
+### With Custom Colors
+
+```kotlin
+var degree by remember { mutableFloatStateOf(0f) }
+
+Dial(
+    degree = degree,
+    onDegreeChanged = { degree = it },
+    modifier = Modifier.size(200.dp),
+    startDegrees = 0f,
+    sweepDegrees = 360f,
+    interval = 30f,  // Show tick marks every 30 degrees
+    colors = DialColors.default(
+        activeTrackColor = Color.Cyan,
+        thumbStrokeColor = Color.Cyan,
+        activeTickColor = Color.Cyan,
+    ),
 )
 ```
 
 ## Next Steps
 
 - [Customization](/components/customization/) - Create custom thumb and track designs
+- [DialColors Reference](/reference/dial-colors/) - Complete colors API documentation
 - [DialState Reference](/reference/dial-state/) - Understand the state object

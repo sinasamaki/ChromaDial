@@ -14,7 +14,7 @@ class DialState(
     val degreeRange: ClosedFloatingPointRange<Float>,
     val interval: Float = 0f,
     val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    var onValueChangeFinished: (() -> Unit)? = null,
+    var onDegreeChangeFinished: (() -> Unit)? = null,
     val startDegrees: Float = 0f
 )
 ```
@@ -43,7 +43,7 @@ The degree interval between snap points. When `0f`, rotation is continuous. When
 
 How to calculate the radius from the dial's constraints.
 
-### onValueChangeFinished
+### onDegreeChangeFinished
 **Type:** `(() -> Unit)?`
 **Default:** `null`
 
@@ -101,7 +101,7 @@ value = (degree - degreeRange.start) / (degreeRange.endInclusive - degreeRange.s
 ### degreeRange
 **Type:** `ClosedFloatingPointRange<Float>` (read-only)
 
-The allowed range for the `degree` property. When using the simple API (`startDegrees`/`sweepDegrees`), this is `0f..sweepDegrees`.
+The allowed range for the `degree` property. This is always `0f..sweepDegrees`.
 
 ```kotlin
 // Get the sweep angle (total rotation range)
@@ -196,7 +196,7 @@ state.calculateSnappedValue(96f)  // Returns 100f (end of range)
 
 Internal callback used by the Dial to notify of value changes. Set to the `onDegreeChanged` parameter.
 
-### onValueChangeFinished
+### onDegreeChangeFinished
 **Type:** `(() -> Unit)?`
 
 Callback invoked when the user finishes dragging. Can be set via constructor or directly on the property.

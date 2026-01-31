@@ -1,5 +1,8 @@
 package com.sinasamaki.chroma.dial
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -39,6 +42,8 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.key
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -59,11 +64,11 @@ public class DialColors internal constructor(
          */
         public fun default(
             inactiveTrackColor: Color = Zinc700,
-            activeTrackColor: Color = Violet500,
-            thumbColor: Color = Violet950,
-            thumbStrokeColor: Color = Violet500,
-            inactiveTickColor: Color = Zinc600,
-            activeTickColor: Color = Violet400,
+            activeTrackColor: Color = Lime500,
+            thumbColor: Color = Zinc950,
+            thumbStrokeColor: Color = Lime400,
+            inactiveTickColor: Color = Zinc700,
+            activeTickColor: Color = Lime300,
         ): DialColors = DialColors(
             inactiveTrackColor = inactiveTrackColor,
             activeTrackColor = activeTrackColor,
@@ -86,7 +91,7 @@ public class DialState(
     public val degreeRange: ClosedFloatingPointRange<Float>,
     public val interval: Float = 0f,
     public val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    public var onValueChangeFinished: (() -> Unit)? = null,
+    public var onDegreeChangeFinished: (() -> Unit)? = null,
     public val startDegrees: Float = 0f
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
@@ -167,7 +172,7 @@ public fun Dial(
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
     radiusMode: RadiusMode = RadiusMode.WIDTH,
-    onValueChangeFinished: (() -> Unit)? = null,
+    onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
     colors: DialColors = DialColors.default(),
@@ -179,7 +184,7 @@ public fun Dial(
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
         radiusMode = radiusMode,
-        onValueChangeFinished = onValueChangeFinished,
+        onDegreeChangeFinished = onDegreeChangeFinished,
         interactionSource = interactionSource,
         interval = interval,
         thumb = { state -> DefaultDialThumb(state, colors) },
@@ -198,7 +203,7 @@ public fun Dial(
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
     radiusMode: RadiusMode = RadiusMode.WIDTH,
-    onValueChangeFinished: (() -> Unit)? = null,
+    onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
     thumb: @Composable (DialState) -> Unit,
@@ -206,9 +211,9 @@ public fun Dial(
 ) {
     val degreeRange = 0f..sweepDegrees
     val state = remember(degreeRange, interval, radiusMode, startDegrees) {
-        DialState(degree, degreeRange, interval, radiusMode, onValueChangeFinished, startDegrees)
+        DialState(degree, degreeRange, interval, radiusMode, onDegreeChangeFinished, startDegrees)
     }
-    state.onValueChangeFinished = onValueChangeFinished
+    state.onDegreeChangeFinished = onDegreeChangeFinished
     state.onValueChange = onDegreeChanged
     state.degree = degree
 
@@ -376,7 +381,7 @@ private fun Dial(
                                 dragTracker = Offset.Zero
                                 draggingAngle = state.degree
                                 state.overshotAngle = 0f
-                                state.onValueChangeFinished?.invoke()
+                                state.onDegreeChangeFinished?.invoke()
                                 (dragInteraction as? DragInteraction.Start)?.let {
                                     scope.launch {
                                         interactionSource.emit(
@@ -424,73 +429,149 @@ private fun DefaultDialThumb(state: DialState, colors: DialColors) {
     }
 }
 
+// Adjustable constants for ring animation
+private const val RING_ALPHA_DECAY = 0.4f // How much alpha decreases per ring layer
+private const val RING_SCALE_INCREMENT = 0.15f // How much scale increases per ring layer
+
 /**
  * Default track for the Dial component.
  * A simple arc track with active portion overlay and optional ticks.
+ * Supports multi-ring display when sweep exceeds 360 degrees.
  */
 @Composable
 private fun DefaultDialTrack(state: DialState, colors: DialColors) {
     val trackWidth = 4.dp
-    Box(
-        Modifier
-            .fillMaxSize()
-            .drawBehind {
-                val strokeWidth = trackWidth.toPx()
-                val trackRadius = state.radius - 12.dp.toPx()
-                val startAngle = state.startDegrees - 90f
-                val sweepRange = state.degreeRange.endInclusive - state.degreeRange.start
-                val activeSweep = state.degree - state.degreeRange.start
+    val sweepRange = state.degreeRange.endInclusive - state.degreeRange.start
+    val totalSweep = state.degree - state.degreeRange.start
 
-                // Draw background track (full sweep)
-                drawArc(
-                    color = colors.inactiveTrackColor,
-                    startAngle = startAngle,
-                    sweepAngle = sweepRange,
-                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
-                    size = Size(trackRadius * 2, trackRadius * 2),
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+    val maxPossibleRings = maxOf(1, kotlin.math.ceil(sweepRange / 360.0).toInt())
+    val numActiveRings =
+        maxOf(1, kotlin.math.ceil(totalSweep.coerceAtLeast(0.001f) / 360.0).toInt())
+
+    Box(Modifier.fillMaxSize()) {
+        // Draw each ring layer in reverse order (outer rings on top)
+        for (ringIndex in (maxPossibleRings - 1) downTo 0) {
+            val ringStartSweep = ringIndex * 360f
+            val ringMaxSweep = (sweepRange - ringStartSweep).coerceIn(0f, 360f)
+            val ringSweep = (totalSweep - ringStartSweep).coerceIn(0f, ringMaxSweep)
+            val isActiveRing = ringIndex < numActiveRings
+            val ringsAbove = if (isActiveRing) (numActiveRings - 1 - ringIndex)
+                .coerceAtLeast(0) else 0
+            val targetScale = 1f + ringsAbove * RING_SCALE_INCREMENT
+            val targetAlpha = (1f - ringsAbove * RING_ALPHA_DECAY).coerceAtLeast(0.01f)
+            val isInnermostRing = ringIndex == numActiveRings - 1
+            val targetStrokeMultiplier = if (isActiveRing) 1f else 0f
+
+            key(ringIndex) {
+                val scale by animateFloatAsState(
+                    targetValue = targetScale,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessLow,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                    )
+                )
+                val strokeMultiplier by animateFloatAsState(
+                    targetValue = targetStrokeMultiplier,
+                    animationSpec = spring(
+                        stiffness = if (isActiveRing)
+                            Spring.StiffnessLow
+                        else
+                            Spring.StiffnessHigh
+                    )
+                )
+                val alpha by animateFloatAsState(
+                    targetValue = targetAlpha,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                    )
                 )
 
-                // Draw active track (from start to current position)
-                if (activeSweep > 0f) {
-                    drawArc(
-                        color = colors.activeTrackColor,
-                        startAngle = startAngle,
-                        sweepAngle = activeSweep,
-                        topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
-                        size = Size(trackRadius * 2, trackRadius * 2),
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                if (strokeMultiplier > 0f || ringMaxSweep > 0f) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .drawBehind {
+                                val baseStrokeWidth = trackWidth.toPx()
+                                val strokeWidth = baseStrokeWidth * strokeMultiplier
+                                val trackRadius = state.radius - 12.dp.toPx()
+                                val startAngle = state.startDegrees - 90f
+
+                                if (ringMaxSweep > 0f) {
+                                    drawArc(
+                                        color = colors.inactiveTrackColor.copy(alpha = alpha),
+                                        startAngle = startAngle,
+                                        sweepAngle = ringMaxSweep,
+                                        topLeft = Offset(
+                                            center.x - trackRadius,
+                                            center.y - trackRadius
+                                        ),
+                                        size = Size(trackRadius * 2, trackRadius * 2),
+                                        useCenter = false,
+                                        style = Stroke(
+                                            width = strokeWidth,
+                                            cap = StrokeCap.Round
+                                        )
+                                    )
+                                }
+
+                                if (ringSweep > 0f && strokeWidth > 0f) {
+                                    drawArc(
+                                        color = colors.activeTrackColor.copy(alpha = alpha),
+                                        startAngle = startAngle,
+                                        sweepAngle = ringSweep,
+                                        topLeft = Offset(
+                                            center.x - trackRadius,
+                                            center.y - trackRadius
+                                        ),
+                                        size = Size(trackRadius * 2, trackRadius * 2),
+                                        useCenter = false,
+                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                    )
+                                }
+
+                                if (state.interval > 0f && ringMaxSweep > 0f) {
+                                    val tickRangeStart = state.startDegrees
+                                    val tickRangeEnd = state.startDegrees + ringMaxSweep
+                                    val currentDegreeForTicks = if (isActiveRing) {
+                                        state.startDegrees + ringSweep
+                                    } else {
+                                        state.startDegrees
+                                    }
+
+                                    drawEveryInterval(
+                                        degreeRange = tickRangeStart..tickRangeEnd,
+                                        radius = state.radius,
+                                        interval = state.interval,
+                                        padding = 12.dp,
+                                        currentDegree = currentDegreeForTicks,
+                                    ) { data ->
+                                        val tickColor = if (data.inActiveRange && isActiveRing) {
+                                            colors.activeTickColor.copy(alpha = alpha)
+                                        } else {
+                                            colors.inactiveTickColor.copy(alpha = alpha)
+                                        }
+                                        rotate(
+                                            degrees = data.degree,
+                                            pivot = data.position
+                                        ) {
+                                            drawLine(
+                                                color = tickColor,
+                                                start = data.position - Offset(0f, 4.dp.toPx()),
+                                                end = data.position + Offset(0f, 4.dp.toPx()),
+                                                strokeWidth = 2.dp.toPx(),
+                                                cap = StrokeCap.Round,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                     )
                 }
-
-                // Draw ticks if interval > 0
-                if (state.interval > 0f) {
-                    drawEveryInterval(
-                        dialState = state,
-                        interval = state.interval,
-                        padding = 12.dp,
-                    ) { data ->
-                        val tickColor = if (data.inActiveRange) {
-                            colors.activeTickColor
-                        } else {
-                            colors.inactiveTickColor
-                        }
-                        rotate(
-                            degrees = data.degree,
-                            pivot = data.position
-                        ) {
-                            drawLine(
-                                color = tickColor,
-                                start = data.position - Offset(0f, 4.dp.toPx()),
-                                end = data.position + Offset(0f, 4.dp.toPx()),
-                                strokeWidth = 2.dp.toPx(),
-                                cap = StrokeCap.Round,
-                            )
-                        }
-                    }
-                }
             }
-    )
+        }
+    }
 }

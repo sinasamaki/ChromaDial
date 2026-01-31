@@ -90,7 +90,7 @@ fun main() = singleWindowApplication {
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(24.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(64.dp)
         ) {
             item {
                 ProgressGaugeDial()
@@ -147,8 +147,6 @@ fun DefaultDial() {
             degree = degree,
             onDegreeChanged = { degree = it },
             modifier = Modifier.size(200.dp),
-            startDegrees = 180f,
-            sweepDegrees = 275f,
         )
     }
 }

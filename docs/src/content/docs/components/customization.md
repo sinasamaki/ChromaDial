@@ -3,7 +3,49 @@ title: Customization
 description: Create custom thumb and track designs for your dials.
 ---
 
-ChromaDial's power comes from its fully customizable `thumb` and `track` composables. Both receive a `DialState` object that provides all the information needed to create rich, interactive designs.
+ChromaDial offers two approaches to customization: the simple `DialColors` API for color customization, and fully custom `thumb` and `track` composables for complete control.
+
+## DialColors (Simple API)
+
+For quick color customization without writing custom composables, use `DialColors`:
+
+```kotlin
+Dial(
+    degree = degree,
+    onDegreeChanged = { degree = it },
+    colors = DialColors.default(
+        inactiveTrackColor = Color.Gray,
+        activeTrackColor = Color.Blue,
+        thumbColor = Color.White,
+        thumbStrokeColor = Color.Blue,
+        inactiveTickColor = Color.Gray,
+        activeTickColor = Color.Blue,
+    ),
+)
+```
+
+### DialColors Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `inactiveTrackColor` | `Color` | `Zinc700` | Color of the track background |
+| `activeTrackColor` | `Color` | `Lime500` | Color of the active/progress arc |
+| `thumbColor` | `Color` | `Zinc950` | Fill color of the thumb |
+| `thumbStrokeColor` | `Color` | `Lime400` | Stroke color of the thumb |
+| `inactiveTickColor` | `Color` | `Zinc700` | Color of tick marks outside active range |
+| `activeTickColor` | `Color` | `Lime300` | Color of tick marks within active range |
+
+### Default Track Features
+
+The default track (used with `DialColors`) includes:
+
+- **Progress arc** - Shows the active range from start to current degree
+- **Tick marks** - Automatically displayed when `interval > 0`
+- **Multi-ring display** - When `sweepDegrees > 360`, completed rotations scale outward with animated transitions and decreasing alpha
+
+## Custom Composables (Advanced API)
+
+For full control, use custom `thumb` and `track` composables. Both receive a `DialState` object that provides all the information needed to create rich, interactive designs.
 
 ## Custom Thumb
 
@@ -299,5 +341,6 @@ fun GradientArcDial() {
 
 ## Next Steps
 
+- [DialColors Reference](/reference/dial-colors/) - Complete colors API documentation
 - [DialState Reference](/reference/dial-state/) - Complete state API documentation
 - [RadiusMode Reference](/reference/radius-mode/) - Understand radius calculation

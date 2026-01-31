@@ -22,16 +22,25 @@ ChromaDial gives you a draggable circular dial component that can be used for:
 
 The Dial component works with degrees. The thumb (draggable handle) is positioned around a circular path based on the current degree value. By default, 0 degrees points upward (12 o'clock position), and degrees increase clockwise.
 
-### Two API Variants
+### Two Customization Approaches
 
-ChromaDial offers two ways to configure the rotation range:
+ChromaDial offers two ways to customize the dial's appearance:
 
-1. **Simple API** - Use `startDegrees` and `sweepDegrees` for easy arc configuration
-2. **Advanced API** - Use `degreeRange` for precise control over allowed rotation
+1. **Simple API** - Use `DialColors` to customize colors while using the default thumb and track
+2. **Custom API** - Provide your own `thumb` and `track` composables for full control
 
-### Customizable Visuals
+### Arc Configuration
 
-Both the **thumb** (the draggable handle) and **track** (the background path) are fully customizable composables. You provide your own composables that receive a `DialState` object with all the information needed to render your design.
+Use `startDegrees` and `sweepDegrees` to configure the arc:
+- `startDegrees` - Where the arc begins visually (0 = top, 90 = right, 180 = bottom, 270 = left)
+- `sweepDegrees` - How many degrees the arc spans (can exceed 360 for multi-rotation dials)
+
+### Default Track Features
+
+The default track includes advanced features out of the box:
+- **Multi-ring display** - When `sweepDegrees` exceeds 360, completed rotations scale outward with animated transitions
+- **Tick marks** - Set `interval` to display tick marks along the track
+- **Smooth animations** - Ring scale, alpha, and stroke width animate smoothly
 
 ## Platforms
 

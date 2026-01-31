@@ -32,6 +32,7 @@ export default defineConfig({
 				{
 					label: 'API Reference',
 					items: [
+						{ label: 'DialColors', slug: 'reference/dial-colors' },
 						{ label: 'DialState', slug: 'reference/dial-state' },
 						{ label: 'RadiusMode', slug: 'reference/radius-mode' },
 					],
