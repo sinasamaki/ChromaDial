@@ -19,7 +19,7 @@ var degree by remember { mutableFloatStateOf(0f) }
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     startDegrees = 135f,
     sweepDegrees = 270f,
     modifier = Modifier.size(200.dp)

@@ -12,7 +12,7 @@ var degree by remember { mutableFloatStateOf(0f) }
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
     startDegrees = 0f,
     sweepDegrees = 360f,
@@ -30,7 +30,7 @@ Use this when you want to customize colors while using the default thumb and tra
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     startDegrees = 270f,
     sweepDegrees = 180f,
     colors = DialColors.default(
@@ -47,7 +47,7 @@ Use this when you need full control over the thumb and track appearance:
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     startDegrees = 270f,
     sweepDegrees = 180f,
     thumb = { state -> /* custom thumb */ },
@@ -74,13 +74,13 @@ var degree by remember { mutableFloatStateOf(90f) }  // 90° into the range (3 o
 var degree by remember { mutableFloatStateOf(90f) }  // Midpoint of the arc
 ```
 
-### onDegreeChanged
+### onDegreeChange
 **Type:** `(Float) -> Unit`
 
 Callback invoked when the user drags the dial. Update your state in this callback:
 
 ```kotlin
-onDegreeChanged = { newDegree -> degree = newDegree }
+onDegreeChange = { newDegree -> degree = newDegree }
 ```
 
 ### modifier
@@ -252,7 +252,7 @@ var degree by remember { mutableFloatStateOf(0f) }
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
     startDegrees = 0f,
     sweepDegrees = 360f,
@@ -268,7 +268,7 @@ var degree by remember { mutableFloatStateOf(90f) }  // Start at center
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp, 100.dp),
     startDegrees = 270f,
     sweepDegrees = 180f,
@@ -283,7 +283,7 @@ var degree by remember { mutableFloatStateOf(90f) }  // 90° into the range
 
 Dial(
     degree = animatedDegree,  // Use animation for smooth snapping
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
     startDegrees = -90f,
     sweepDegrees = 220f,
@@ -302,7 +302,7 @@ var degree by remember { mutableFloatStateOf(sweepDegrees) }  // Start at end
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(300.dp),
     startDegrees = 0f,
     sweepDegrees = sweepDegrees,
@@ -317,7 +317,7 @@ var degree by remember { mutableFloatStateOf(0f) }
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
     startDegrees = 0f,
     sweepDegrees = 360f,

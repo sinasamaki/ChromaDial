@@ -194,7 +194,7 @@ state.calculateSnappedValue(96f)  // Returns 100f (end of range)
 ### onValueChange
 **Type:** `(Float) -> Unit`
 
-Internal callback used by the Dial to notify of value changes. Set to the `onDegreeChanged` parameter.
+Internal callback used by the Dial to notify of value changes. Set to the `onDegreeChange` parameter.
 
 ### onDegreeChangeFinished
 **Type:** `(() -> Unit)?`

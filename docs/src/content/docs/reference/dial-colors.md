@@ -100,7 +100,7 @@ var degree by remember { mutableFloatStateOf(0f) }
 
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     colors = DialColors.default(),  // Use all defaults
 )
 ```
@@ -110,7 +110,7 @@ Dial(
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     colors = DialColors.default(
         activeTrackColor = Color.Cyan,
         thumbStrokeColor = Color.Cyan,
@@ -126,7 +126,7 @@ Tick marks are automatically displayed when `interval > 0`:
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     interval = 30f,  // Tick marks every 30 degrees
     colors = DialColors.default(
         inactiveTickColor = Color.Gray.copy(alpha = 0.5f),
@@ -164,7 +164,7 @@ For dials with `sweepDegrees > 360` (e.g., timers), the default track displays m
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     sweepDegrees = 360f * 3,  // 3 full rotations
     interval = 30f,
     colors = DialColors.default(),

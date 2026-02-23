@@ -151,7 +151,7 @@ fun DefaultDial() {
         var degree by remember { mutableFloatStateOf(90f) }
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.size(200.dp),
         )
     }
@@ -172,7 +172,7 @@ fun Over360Dial() {
         var degree by remember { mutableFloatStateOf(90f) }
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.size(200.dp),
             startDegrees = 0f,
             sweepDegrees = 360f * 5,
@@ -196,7 +196,7 @@ fun TickedDial() {
 
         Dial(
             degree = degree,
-            onDegreeChanged = {
+            onDegreeChange = {
                 degree = it
             },
             modifier = Modifier.size(200.dp),
@@ -222,7 +222,7 @@ fun MaterialDial() {
         var degree by remember { mutableFloatStateOf(90f) }
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.size(200.dp),
             startDegrees = 180f,
             sweepDegrees = 275f,
@@ -339,7 +339,7 @@ fun ProgressGaugeDial() {
         var degree by remember { mutableFloatStateOf(90f) }
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier
                 .size(
                     200.dp,
@@ -448,7 +448,7 @@ fun CameraModeDial() {
         )
         Dial(
             degree = animatedDegree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.size(200.dp),
             startDegrees = -90f,
             sweepDegrees = 220f,
@@ -663,7 +663,7 @@ fun TimerDial() {
 
         Dial(
             degree = animatedDegree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.fillMaxWidth().aspectRatio(1f),
             startDegrees = -360f * 4,
             sweepDegrees = 360f * 4,
@@ -847,7 +847,7 @@ fun AngleIndicatorDial() {
 
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChange = { degree = it },
             modifier = Modifier.size(200.dp),
             startDegrees = 0f,
             sweepDegrees = 360f,
@@ -987,7 +987,7 @@ fun NutritionGoalDial() {
             // With relative degrees (0 to 180), degree = (proteinGrams / 300f) * 180f
             Dial(
                 degree = (proteinGrams / 300f) * 180f,
-                onDegreeChanged = {
+                onDegreeChange = {
                     proteinGrams = (it / 180f * 300f).coerceIn(0f, 300f)
                 },
                 modifier = Modifier.size(300.dp, 150.dp),
@@ -1068,7 +1068,7 @@ fun NutritionGoalDial() {
             // With relative degrees (0 to 180), degree = (carbsGrams / 400f) * 180f
             Dial(
                 degree = (carbsGrams / 400f) * 180f,
-                onDegreeChanged = {
+                onDegreeChange = {
                     carbsGrams = (it / 180f * 400f).coerceIn(0f, 400f)
                 },
                 modifier = Modifier.size(240.dp, 120.dp),
@@ -1149,7 +1149,7 @@ fun NutritionGoalDial() {
             // With relative degrees (0 to 180), degree = (fatsGrams / 150f) * 180f
             Dial(
                 degree = (fatsGrams / 150f) * 180f,
-                onDegreeChanged = {
+                onDegreeChange = {
                     fatsGrams = (it / 180f * 150f).coerceIn(0f, 150f)
                 },
                 modifier = Modifier.size(180.dp, 90.dp),
@@ -1341,7 +1341,7 @@ fun MinimalClock() {
         var minute by remember { mutableStateOf(0f) }
         Dial(
             degree = minute,
-            onDegreeChanged = { minute = it },
+            onDegreeChange = { minute = it },
             modifier = Modifier
                 .size(300.dp),
             thumb = {
@@ -1433,7 +1433,7 @@ fun MinimalClock() {
 
         Dial(
             degree = animatedHour,
-            onDegreeChanged = { hour = it },
+            onDegreeChange = { hour = it },
             modifier = Modifier
                 .size(200.dp),
             thumb = {
@@ -1567,7 +1567,7 @@ fun AmPmShadowClock() {
 
         Dial(
             degree = animatedAmPm,
-            onDegreeChanged = { amPm = it },
+            onDegreeChange = { amPm = it },
             interactionSource = interaction,
             modifier = Modifier
                 .size(400.dp)
@@ -1632,7 +1632,7 @@ fun AmPmShadowClock() {
         var minute by remember { mutableStateOf(0f) }
         Dial(
             degree = minute,
-            onDegreeChanged = { minute = it },
+            onDegreeChange = { minute = it },
             modifier = Modifier
                 .size(250.dp),
             thumb = {
@@ -1707,7 +1707,7 @@ fun AmPmShadowClock() {
 
         Dial(
             degree = animatedHour,
-            onDegreeChanged = { hour = it },
+            onDegreeChange = { hour = it },
             modifier = Modifier
                 .size(200.dp),
             thumb = {

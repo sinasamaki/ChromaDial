@@ -49,7 +49,7 @@ Use this mode for:
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),  // Square dial
     // radiusMode defaults to WIDTH
 )
@@ -60,7 +60,7 @@ Dial(
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
     radiusMode = RadiusMode.WIDTH,
 )
@@ -73,7 +73,7 @@ For a top semi-circle (half height), use HEIGHT mode to ensure the thumb follows
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp, 100.dp),  // Width: 200, Height: 100
     startDegrees = 270f,
     sweepDegrees = 180f,
@@ -114,7 +114,7 @@ Consider a dial with `Modifier.size(200.dp, 100.dp)`:
 // Width mode - larger radius, thumb may go outside bounds
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(300.dp, 150.dp),
     startDegrees = 270f,
     sweepDegrees = 180f,
@@ -124,7 +124,7 @@ Dial(
 // Height mode - smaller radius, thumb stays within bounds
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     modifier = Modifier.size(300.dp, 150.dp),
     startDegrees = 270f,
     sweepDegrees = 180f,

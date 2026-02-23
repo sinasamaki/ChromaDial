@@ -12,7 +12,7 @@ For quick color customization without writing custom composables, use `DialColor
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     colors = DialColors.default(
         inactiveTrackColor = Color.Gray,
         activeTrackColor = Color.Blue,
@@ -56,7 +56,7 @@ The thumb is the draggable handle that users interact with. It's positioned and 
 ```kotlin
 Dial(
     degree = degree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     thumb = { state ->
         Box(
             Modifier
@@ -259,7 +259,7 @@ val animatedDegree by animateFloatAsState(
 
 Dial(
     degree = animatedDegree,
-    onDegreeChanged = { degree = it },
+    onDegreeChange = { degree = it },
     interval = 30f,  // Combine with interval for bouncy snapping
 )
 ```
@@ -273,7 +273,7 @@ fun GradientArcDial() {
 
     Dial(
         degree = degree,
-        onDegreeChanged = { degree = it },
+        onDegreeChange = { degree = it },
         modifier = Modifier.size(200.dp, 100.dp),
         startDegrees = 270f,
         sweepDegrees = 180f,

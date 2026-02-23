@@ -167,7 +167,7 @@ public class DialState(
 @Composable
 public fun Dial(
     degree: Float,
-    onDegreeChanged: (Float) -> Unit,
+    onDegreeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
@@ -179,7 +179,7 @@ public fun Dial(
 ) {
     Dial(
         degree = degree,
-        onDegreeChanged = onDegreeChanged,
+        onDegreeChange = onDegreeChange,
         modifier = modifier,
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
@@ -198,7 +198,7 @@ public fun Dial(
 @Composable
 public fun Dial(
     degree: Float,
-    onDegreeChanged: (Float) -> Unit,
+    onDegreeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
@@ -214,7 +214,7 @@ public fun Dial(
         DialState(degree, degreeRange, interval, radiusMode, onDegreeChangeFinished, startDegrees)
     }
     state.onDegreeChangeFinished = onDegreeChangeFinished
-    state.onValueChange = onDegreeChanged
+    state.onValueChange = onDegreeChange
     state.degree = degree
 
     Dial(
@@ -357,7 +357,10 @@ private fun Dial(
                                 if (draggingAngle in state.degreeRange) {
 //                                state.degree = draggingAngle
                                     state.overshotAngle = 0f
-                                    state.onValueChange(state.calculateSnappedValue(draggingAngle))
+                                    val newValue = state.calculateSnappedValue(draggingAngle)
+                                    if (newValue != state.degree) {
+                                        state.onValueChange(newValue)
+                                    }
                                 } else {
                                     // Clamp to range but don't update previousAngle
                                     // This keeps the finger "tracking" so it can come back
@@ -373,7 +376,10 @@ private fun Dial(
                                     }
 
 //                                state.degree = clampedAngle
-                                    state.onValueChange(state.calculateSnappedValue(clampedAngle))
+                                    val newValue = state.calculateSnappedValue(clampedAngle)
+                                    if (newValue != state.degree) {
+                                        state.onValueChange(newValue)
+                                    }
                                 }
                                 previousAngle = dragAngle
                             },
