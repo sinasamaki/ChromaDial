@@ -1,5 +1,3 @@
-package com.sinasamaki.chroma.dial.sample
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -74,12 +72,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.singleWindowApplication
+import java.io.BufferedInputStream
+import java.io.ByteArrayInputStream
+import java.net.URI
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
+import chromadial.sample.generated.resources.Res
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.DialInterval
 import com.sinasamaki.chroma.dial.drawEveryInterval
 
-fun main() = singleWindowApplication {
+@Composable
+fun Sample() {
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -129,6 +134,7 @@ fun main() = singleWindowApplication {
     }
 
 }
+
 
 @Composable
 fun DefaultDial() {
@@ -187,9 +193,12 @@ fun TickedDial() {
             fontWeight = FontWeight.Medium
         )
         var degree by remember { mutableFloatStateOf(90f) }
+
         Dial(
             degree = degree,
-            onDegreeChanged = { degree = it },
+            onDegreeChanged = {
+                degree = it
+            },
             modifier = Modifier.size(200.dp),
             startDegrees = 180f,
             sweepDegrees = 275f,
@@ -254,7 +263,8 @@ fun MaterialDial() {
                             val strokeWidth = trackWidth.toPx()
                             val trackRadius = state.radius - strokeWidth / 2
                             val startAngle = state.startDegrees - 90f
-                            val sweepRange = state.degreeRange.endInclusive - state.degreeRange.start
+                            val sweepRange =
+                                state.degreeRange.endInclusive - state.degreeRange.start
                             val activeSweep = (state.degree - state.degreeRange.start) - 10f
                             val inactiveSweep = sweepRange - activeSweep - 20f
                             val inactiveStart = startAngle + activeSweep + 20f
@@ -265,7 +275,10 @@ fun MaterialDial() {
                                     color = Violet500.copy(alpha = .2f),
                                     startAngle = inactiveStart,
                                     sweepAngle = inactiveSweep,
-                                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
+                                    topLeft = Offset(
+                                        center.x - trackRadius,
+                                        center.y - trackRadius
+                                    ),
                                     size = Size(trackRadius * 2, trackRadius * 2),
                                     useCenter = false,
                                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
@@ -278,7 +291,10 @@ fun MaterialDial() {
                                     color = Violet500,
                                     startAngle = startAngle,
                                     sweepAngle = activeSweep,
-                                    topLeft = Offset(center.x - trackRadius, center.y - trackRadius),
+                                    topLeft = Offset(
+                                        center.x - trackRadius,
+                                        center.y - trackRadius
+                                    ),
                                     size = Size(trackRadius * 2, trackRadius * 2),
                                     useCenter = false,
                                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
@@ -286,9 +302,12 @@ fun MaterialDial() {
                             }
 
                             // Draw stop indicator at the end of the track
-                            val endAngleRadians = (startAngle + sweepRange) * kotlin.math.PI.toFloat() / 180f
-                            val stopIndicatorX = center.x + trackRadius * kotlin.math.cos(endAngleRadians)
-                            val stopIndicatorY = center.y + trackRadius * kotlin.math.sin(endAngleRadians)
+                            val endAngleRadians =
+                                (startAngle + sweepRange) * kotlin.math.PI.toFloat() / 180f
+                            val stopIndicatorX =
+                                center.x + trackRadius * kotlin.math.cos(endAngleRadians)
+                            val stopIndicatorY =
+                                center.y + trackRadius * kotlin.math.sin(endAngleRadians)
                             drawCircle(
                                 color = Lime300,
                                 radius = 4.dp.toPx(),
@@ -1679,7 +1698,6 @@ fun AmPmShadowClock() {
                 )
 
         }
-
 
 
         var hour by remember { mutableStateOf(0f) }

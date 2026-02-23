@@ -9,7 +9,7 @@ kotlin {
     jvm()
 
     sourceSets {
-        jvmMain.dependencies {
+        commonMain.dependencies {
             implementation(project(":library"))
             implementation(compose.desktop.currentOs)
             implementation(compose.runtime)
@@ -18,6 +18,7 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(compose.components.resources)
         }
     }
 }

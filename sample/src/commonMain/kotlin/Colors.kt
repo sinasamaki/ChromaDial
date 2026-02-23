@@ -1,5 +1,3 @@
-package com.sinasamaki.chroma.dial.sample
-
 import androidx.compose.ui.graphics.Color
 
 /**
