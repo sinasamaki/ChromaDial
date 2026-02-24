@@ -57,6 +57,9 @@ fun Sample() {
             item {
                 AmPmShadowClock()
             }
+            item {
+                GradientDial()
+            }
         }
     }
 
