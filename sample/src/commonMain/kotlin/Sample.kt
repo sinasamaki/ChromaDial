@@ -60,6 +60,15 @@ fun Sample() {
             item {
                 GradientDial()
             }
+            item {
+                TemperatureDial()
+            }
+            item {
+                CoffeeGrindSettingDial()
+            }
+            item {
+                VoiceRecorderDial()
+            }
         }
     }
 

@@ -1,4 +1,3 @@
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,20 +16,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.PI
-import androidx.compose.ui.graphics.PathIterator
-import androidx.compose.ui.graphics.PathSegment
-import androidx.compose.ui.graphics.StrokeCap
 
 @Composable
 fun GradientDial() {
@@ -69,8 +62,8 @@ fun GradientDial() {
 
                             val colors = listOf(
                                 Zinc950.copy(alpha = 1f),
-                                Sky400,
-                                Blue500,
+                                Blue600,
+                                Violet400,
                             )
 
                             drawArc(
@@ -94,7 +87,7 @@ fun GradientDial() {
                                 oval = Rect(
                                     center, state.radius - (strokeWidth / 1),
                                 ),
-                                19f, 330f
+                                12f, 337f
                             )
                             drawPath(
                                 path,

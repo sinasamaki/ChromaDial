@@ -1,5 +1,7 @@
 package com.sinasamaki.chroma.dial
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -98,9 +100,9 @@ public class DialState(
     public val startDegrees: Float = 0f
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
-    private var rawOvershootDegreesState by mutableFloatStateOf(0f)
     private var radiusState by mutableFloatStateOf(0f)
     private var thumbSizeState by mutableFloatStateOf(0f)
+    internal val overshootAnimatable = Animatable(0f)
 
     init {
         require(interval >= 0f) { "interval must be >= 0" }
@@ -154,17 +156,21 @@ public class DialState(
             return if (range == 0f) 0f else (degree - degreeRange.start) / range
         }
 
-    internal var rawOvershootDegrees: Float
-        set(newVal) {
-            rawOvershootDegreesState = newVal
-        }
-        get() = rawOvershootDegreesState
+    public var overshootDecay: Float = 0.5f
+        internal set
 
-    public var overshootDecay: Float = 0.3f
+    public var overshootAnimationSpec: AnimationSpec<Float> = spring()
         internal set
 
     public val overshootDegrees: Float
-        get() = rawOvershootDegrees * overshootDecay
+        get() {
+            val x = overshootAnimatable.value
+            if (overshootDecay <= 0f) return x
+            if (overshootDecay >= 1f) return 0f
+            val k = 0.05f * overshootDecay / (1f - overshootDecay)
+            val sign = if (x < 0f) -1f else 1f
+            return sign * (1f - kotlin.math.exp(-kotlin.math.abs(x) * k)) / k
+        }
 
     public var onValueChange: (Float) -> Unit = {}
 }
@@ -184,7 +190,8 @@ public fun Dial(
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
-    overshootDecay: Float = 0.3f,
+    overshootDecay: Float = 0.5f,
+    overshootAnimationSpec: AnimationSpec<Float> = spring(),
     colors: DialColors = DialColors.default(),
 ) {
     Dial(
@@ -198,6 +205,7 @@ public fun Dial(
         interactionSource = interactionSource,
         interval = interval,
         overshootDecay = overshootDecay,
+        overshootAnimationSpec = overshootAnimationSpec,
         thumb = { state -> DefaultDialThumb(state, colors) },
         track = { state -> DefaultDialTrack(state, colors) }
     )
@@ -217,7 +225,8 @@ public fun Dial(
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
-    overshootDecay: Float = 0.3f,
+    overshootDecay: Float = 0.5f,
+    overshootAnimationSpec: AnimationSpec<Float> = spring(),
     thumb: @Composable (DialState) -> Unit,
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
@@ -228,7 +237,10 @@ public fun Dial(
     state.onDegreeChangeFinished = onDegreeChangeFinished
     state.onValueChange = onDegreeChange
     state.degree = degree
-    SideEffect { state.overshootDecay = overshootDecay }
+    SideEffect {
+        state.overshootDecay = overshootDecay
+        state.overshootAnimationSpec = overshootAnimationSpec
+    }
 
     Dial(
         state = state,
@@ -252,17 +264,13 @@ private fun Dial(
 
     BoxWithConstraints(
         modifier = modifier
-//            .clip(CircleShape)
     ) {
-        // Calculate transform origin for thumb rotation
-//        val dialSize = constraints.maxWidth.toFloat()
         val dialSize by remember(constraints) {
             derivedStateOf {
                 Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
             }
         }
 
-        // Calculate radius based on radiusMode and set it on state
         state.radius = when (state.radiusMode) {
             RadiusMode.WIDTH -> dialSize.width / 2f
             RadiusMode.HEIGHT -> dialSize.height / 2f
@@ -356,20 +364,20 @@ private fun Dial(
                                 draggingAngle += delta
 
                                 if (draggingAngle in state.degreeRange) {
-                                    state.rawOvershootDegrees = 0f
+                                    scope.launch { state.overshootAnimatable.snapTo(0f) }
                                     val newValue = state.calculateSnappedValue(draggingAngle)
                                     if (newValue != state.degree) {
                                         state.onValueChange(newValue)
                                     }
                                 } else {
                                     val clampedAngle = draggingAngle.coerceIn(state.degreeRange)
-                                    if (draggingAngle < state.degreeRange.start) {
-                                        state.rawOvershootDegrees =
+                                    val rawOvershoot = when {
+                                        draggingAngle < state.degreeRange.start ->
                                             draggingAngle - state.degreeRange.start
-                                    } else if (draggingAngle > state.degreeRange.endInclusive) {
-                                        state.rawOvershootDegrees =
+                                        else ->
                                             draggingAngle - state.degreeRange.endInclusive
                                     }
+                                    scope.launch { state.overshootAnimatable.snapTo(rawOvershoot) }
 
                                     val newValue = state.calculateSnappedValue(clampedAngle)
                                     if (newValue != state.degree) {
@@ -381,7 +389,9 @@ private fun Dial(
                             onDragEnd = {
                                 dragTracker = Offset.Zero
                                 draggingAngle = state.degree
-                                state.rawOvershootDegrees = 0f
+                                scope.launch {
+                                    state.overshootAnimatable.animateTo(0f, state.overshootAnimationSpec)
+                                }
                                 state.onDegreeChangeFinished?.invoke()
                                 (dragInteraction as? DragInteraction.Start)?.let {
                                     scope.launch {
@@ -430,9 +440,8 @@ private fun DefaultDialThumb(state: DialState, colors: DialColors) {
     }
 }
 
-// Adjustable constants for ring animation
-private const val RING_ALPHA_DECAY = 0.4f // How much alpha decreases per ring layer
-private const val RING_SCALE_INCREMENT = 0.15f // How much scale increases per ring layer
+private const val RING_ALPHA_DECAY = 0.4f
+private const val RING_SCALE_INCREMENT = 0.15f
 
 /**
  * Default track for the Dial component.
@@ -450,7 +459,6 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
         maxOf(1, kotlin.math.ceil(totalSweep.coerceAtLeast(0.001f) / 360.0).toInt())
 
     Box(Modifier.fillMaxSize()) {
-        // Draw each ring layer in reverse order (outer rings on top)
         for (ringIndex in (maxPossibleRings - 1) downTo 0) {
             val ringStartSweep = ringIndex * 360f
             val ringMaxSweep = (sweepRange - ringStartSweep).coerceIn(0f, 360f)
