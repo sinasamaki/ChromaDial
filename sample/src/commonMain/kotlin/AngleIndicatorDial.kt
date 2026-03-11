@@ -58,10 +58,11 @@ fun AngleIndicatorDial() {
 
                             // Draw arc at shorter radius (0 to current degree) with fill
                             val arcRadius = radius * 0.3f
+                            val sweepWithOvershoot = it.degree + it.overshootDegrees
                             drawArc(
                                 color = Blue500.copy(alpha = 0.2f),
                                 startAngle = -90f,
-                                sweepAngle = it.degree,
+                                sweepAngle = sweepWithOvershoot,
                                 topLeft = Offset(
                                     centerPoint.x - arcRadius,
                                     centerPoint.y - arcRadius
@@ -78,7 +79,7 @@ fun AngleIndicatorDial() {
                             drawArc(
                                 color = Blue500,
                                 startAngle = -90f,
-                                sweepAngle = it.degree,
+                                sweepAngle = sweepWithOvershoot,
                                 topLeft = Offset(
                                     centerPoint.x - arcRadius,
                                     centerPoint.y - arcRadius
@@ -103,7 +104,7 @@ fun AngleIndicatorDial() {
                             }
 
                             // Line at current degrees
-                            rotate(degrees = it.degree, pivot = centerPoint) {
+                            rotate(degrees = sweepWithOvershoot, pivot = centerPoint) {
                                 drawLine(
                                     color = Orange500,
                                     start = centerPoint,

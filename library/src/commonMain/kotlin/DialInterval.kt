@@ -7,112 +7,122 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.PI
-import kotlin.math.atan2
+import kotlin.math.abs
 
+/**
+ * Places composable content at regular [spacing]-degree intervals along the dial arc,
+ * using [state] to derive geometry.
+ *
+ * @param state The dial state to derive arc geometry from.
+ * @param modifier Modifier for the container.
+ * @param spacing Degree spacing between adjacent interval positions.
+ * @param padding Inset from the arc radius.
+ * @param currentDegree Current degree in the 0..sweepDegrees space for determining
+ *   [IntervalData.inActiveRange].
+ * @param onIntervalContent Composable content for each interval.
+ */
 @Composable
 public fun DialInterval(
+    state: DialState,
     modifier: Modifier = Modifier,
-    degreeRange: ClosedFloatingPointRange<Float>,
-    radius: Float? = null,
-    interval: Float,
+    spacing: Float,
     padding: Dp = 0.dp,
     currentDegree: Float? = null,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
+    val overshoot = state.overshootDegrees
+    val sweepDegrees = state.degreeRange.endInclusive - state.degreeRange.start
+    DialIntervalImpl(
+        modifier = modifier,
+        startDegrees = state.startDegrees + minOf(0f, overshoot),
+        sweepDegrees = sweepDegrees + abs(overshoot),
+        radius = state.radius,
+        spacing = spacing,
+        padding = padding,
+        currentDegree = currentDegree,
+        onIntervalContent = onIntervalContent,
+    )
+}
+
+/**
+ * Places composable content at regular [spacing]-degree intervals along an arc.
+ *
+ * @param modifier Modifier for the container.
+ * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
+ * @param sweepDegrees Total arc sweep in degrees.
+ * @param radius Arc radius in pixels, or null to use the layout width.
+ * @param spacing Degree spacing between adjacent interval positions.
+ * @param padding Inset from the arc radius.
+ * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
+ *   [IntervalData.inActiveRange].
+ * @param onIntervalContent Composable content for each interval.
+ */
+@Composable
+public fun DialInterval(
+    modifier: Modifier = Modifier,
+    startDegrees: Float = 0f,
+    sweepDegrees: Float,
+    radius: Float? = null,
+    spacing: Float,
+    padding: Dp = 0.dp,
+    currentDegree: Float? = null,
+    onIntervalContent: @Composable (IntervalData) -> Unit,
+) {
+    DialIntervalImpl(
+        modifier = modifier,
+        startDegrees = startDegrees,
+        sweepDegrees = sweepDegrees,
+        radius = radius,
+        spacing = spacing,
+        padding = padding,
+        currentDegree = currentDegree,
+        onIntervalContent = onIntervalContent,
+    )
+}
+
+@Composable
+private fun DialIntervalImpl(
+    modifier: Modifier,
+    startDegrees: Float,
+    sweepDegrees: Float,
+    radius: Float? = null,
+    spacing: Float,
+    padding: Dp,
+    currentDegree: Float?,
+    onIntervalContent: @Composable (IntervalData) -> Unit,
+) {
     val density = LocalDensity.current
 
-    val range = remember(degreeRange) {
-        degreeRange.endInclusive - degreeRange.start
-    }
-    val totalIntervals = remember(interval, range) {
-        if (interval > 0f) (range / interval).toInt() + 1 else 1
-    }
-
-    BoxWithConstraints(
-        modifier = modifier
-    ) {
+    BoxWithConstraints(modifier = modifier) {
         val layoutWidth = constraints.maxWidth.toFloat()
-
         val radiusPx = radius ?: (layoutWidth / 2f)
         val paddingPx = with(density) { padding.toPx() }
 
-        val path = remember(radiusPx, paddingPx, degreeRange) {
-            Path().apply {
-                addArc(
-                    oval = Rect(
-                        offset = Offset(
-                            paddingPx,
-                            paddingPx,
-                        ),
-                        size = Size(
-                            width = (radiusPx * 2) - (paddingPx * 2),
-                            height = (radiusPx * 2) - (paddingPx * 2),
-                        )
-                    ),
-                    startAngleDegrees = degreeRange.start - 90f,
-                    sweepAngleDegrees = degreeRange.endInclusive - degreeRange.start,
-                )
-            }
+        val items = remember(startDegrees, sweepDegrees, radiusPx, spacing, paddingPx, currentDegree) {
+            buildIntervalData(
+                startDegrees = startDegrees,
+                sweepDegrees = sweepDegrees,
+                radius = radiusPx,
+                spacing = spacing,
+                paddingPx = paddingPx,
+                currentDegree = currentDegree,
+            )
         }
 
-        val measure = remember(path) {
-            PathMeasure().apply {
-                setPath(path, false)
-            }
-        }
-
-        for (i in 0 until totalIntervals) {
-            val intervalDegree = if (interval > 0f) {
-                (degreeRange.start + (i * interval)).coerceAtMost(degreeRange.endInclusive)
-            } else {
-                degreeRange.start
-            }
-
-            val progress = if (range > 0) {
-                (intervalDegree - degreeRange.start) / range
-            } else {
-                0f
-            }
-
-            val distance = progress * measure.length
-            val pos = measure.getPosition(distance)
-            val tangent = measure.getTangent(distance)
-            val degrees = atan2(tangent.y, tangent.x) * 180f / PI.toFloat()
-
-            val inActiveRange = if (currentDegree != null) {
-                intervalDegree <= currentDegree
-            } else {
-                false
-            }
-
+        for (item in items) {
             Box(
                 modifier = Modifier
                     .graphicsLayer {
-                        rotationZ = degrees + 90f
+                        rotationZ = item.rotationAngle + 90f
                     }
                     .align(Alignment.CenterStart)
-                    .width(with(density) { (constraints.maxWidth / 1f).toDp() })
+                    .width(with(density) { constraints.maxWidth.toDp() })
             ) {
-                onIntervalContent(
-                    IntervalData(
-                        index = i,
-                        position = pos,
-                        degree = degrees,
-                        intervalDegree = intervalDegree,
-                        inActiveRange = inActiveRange,
-                        progress = progress,
-                    )
-                )
+                onIntervalContent(item)
             }
         }
     }

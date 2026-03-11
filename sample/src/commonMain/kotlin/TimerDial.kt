@@ -119,8 +119,8 @@ fun TimerDial() {
                                 radius = (size.width / 2) - (strokeWidth / 2).toPx(),
                             )
 
-                            // Calculate elapsed degrees from the end of range
-                            val elapsedDegrees = sweepDegrees - it.degree
+                            // Calculate elapsed degrees from the end of range, extended by overshoot
+                            val elapsedDegrees = sweepDegrees - it.degree + maxOf(0f, -it.overshootDegrees)
                             val numRings = (elapsedDegrees / 360).toInt()
                             val baseRadius = (size.width / 2)
                             val ringSpacing = 3.dp.toPx()
@@ -151,17 +151,17 @@ fun TimerDial() {
 
                             )
                             rotate(
-                                degrees = it.absoluteDegree
+                                degrees = it.absoluteDegree + it.overshootDegrees
                             ) {
                                 // interval = 30° for 13 positions around full circle (same as steps=11)
                                 drawEveryInterval(
-                                    degreeRange = 0f..360f,
+                                    sweepDegrees = 360f,
                                     radius = it.radius,
                                     padding = 25.dp,
                                     interval = 30f,
                                 ) { data ->
                                     rotate(
-                                        degrees = data.degree,
+                                        degrees = data.rotationAngle,
                                         pivot = data.position
                                     ) {
                                         drawLine(
@@ -175,13 +175,13 @@ fun TimerDial() {
                                 }
                                 // interval = 6° for 61 positions (same as steps=59)
                                 drawEveryInterval(
-                                    degreeRange = 0f..360f,
+                                    sweepDegrees = 360f,
                                     radius = it.radius,
                                     padding = 25.dp,
                                     interval = 6f,
                                 ) { data ->
                                     rotate(
-                                        degrees = data.degree,
+                                        degrees = data.rotationAngle,
                                         pivot = data.position
                                     ) {
                                         drawLine(
@@ -241,9 +241,9 @@ fun TimerDial() {
                             rotationZ = it.absoluteDegree
                         }
                         .fillMaxSize(),
-                    degreeRange = 0f..360f,
+                    sweepDegrees = 360f,
                     radius = it.radius,
-                    interval = 30f,
+                    spacing = 30f,
                 ) { data ->
                     if (data.index < 12) {
                         Text(

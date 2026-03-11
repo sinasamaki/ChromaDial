@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
  *
  * @param color Arc color.
  * @param startAngle Start angle in degrees, where 0° is 12 o'clock.
- * @param sweep Sweep angle in degrees, clockwise.
+ * @param sweepAngle Sweep angle in degrees, clockwise.
  * @param radius Outer radius of the arc stroke in pixels.
  * @param strokeWidth Stroke width in dp. Defaults to 8.dp.
  * @param strokeCap Stroke cap style. Defaults to [StrokeCap.Round].
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 public fun DrawScope.drawArc(
     color: Color,
     startAngle: Float,
-    sweep: Float,
+    sweepAngle: Float,
     radius: Float,
     strokeWidth: Dp = 8.dp,
     strokeCap: StrokeCap = StrokeCap.Round,
@@ -36,7 +36,7 @@ public fun DrawScope.drawArc(
     drawArc(
         color = color,
         startAngle = startAngle - 90f,
-        sweepAngle = sweep,
+        sweepAngle = sweepAngle,
         useCenter = false,
         topLeft = Offset(center.x - arcRadius, center.y - arcRadius),
         size = Size(arcRadius * 2f, arcRadius * 2f),
@@ -52,7 +52,7 @@ public fun DrawScope.drawArc(
  *
  * @param brush Arc brush (gradient or shader).
  * @param startAngle Start angle in degrees, where 0° is 12 o'clock.
- * @param sweep Sweep angle in degrees, clockwise.
+ * @param sweepAngle Sweep angle in degrees, clockwise.
  * @param radius Outer radius of the arc stroke in pixels.
  * @param strokeWidth Stroke width in dp. Defaults to 8.dp.
  * @param strokeCap Stroke cap style. Defaults to [StrokeCap.Round].
@@ -60,7 +60,7 @@ public fun DrawScope.drawArc(
 public fun DrawScope.drawArc(
     brush: Brush,
     startAngle: Float,
-    sweep: Float,
+    sweepAngle: Float,
     radius: Float,
     strokeWidth: Dp = 8.dp,
     strokeCap: StrokeCap = StrokeCap.Round,
@@ -70,7 +70,7 @@ public fun DrawScope.drawArc(
     drawArc(
         brush = brush,
         startAngle = startAngle - 90f,
-        sweepAngle = sweep,
+        sweepAngle = sweepAngle,
         useCenter = false,
         topLeft = Offset(center.x - arcRadius, center.y - arcRadius),
         size = Size(arcRadius * 2f, arcRadius * 2f),

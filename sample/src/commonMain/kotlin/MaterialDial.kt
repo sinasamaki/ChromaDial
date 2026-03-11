@@ -85,12 +85,14 @@ fun MaterialDial() {
                         .drawBehind {
                             val strokeWidth = trackWidth.toPx()
                             val trackRadius = state.radius - strokeWidth / 2
-                            val startAngle = state.startDegrees - 90f
+                            val overshoot = state.overshootDegrees
+                            val startAngle = state.startDegrees - 90f + minOf(0f, overshoot)
                             val sweepRange =
                                 state.degreeRange.endInclusive - state.degreeRange.start
-                            val activeSweep = (state.degree - state.degreeRange.start) - 10f
-                            val inactiveSweep = sweepRange - activeSweep - 20f
-                            val inactiveStart = startAngle + activeSweep + 20f
+                            val baseActiveSweep = (state.degree - state.degreeRange.start) - 10f
+                            val activeSweep = baseActiveSweep + kotlin.math.abs(overshoot)
+                            val inactiveSweep = sweepRange - baseActiveSweep - 20f
+                            val inactiveStart = state.startDegrees - 90f + baseActiveSweep + 20f
 
                             // Draw inactive track (from current position to end)
                             if (inactiveSweep > 0f) {

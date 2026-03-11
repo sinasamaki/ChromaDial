@@ -35,7 +35,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -45,9 +44,14 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.roundToInt
 
@@ -55,13 +59,13 @@ import kotlin.math.roundToInt
  * Colors for customizing the Dial appearance when using the simple Dial overload.
  */
 @Immutable
-public class DialColors internal constructor(
-    public val inactiveTrackColor: Color,
-    public val activeTrackColor: Color,
-    public val thumbColor: Color,
-    public val thumbStrokeColor: Color,
-    public val inactiveTickColor: Color,
-    public val activeTickColor: Color,
+public data class DialColors(
+    val inactiveTrackColor: Color,
+    val activeTrackColor: Color,
+    val thumbColor: Color,
+    val thumbStrokeColor: Color,
+    val inactiveTickColor: Color,
+    val activeTickColor: Color,
 ) {
     public companion object {
         /**
@@ -97,9 +101,12 @@ public class DialState(
     public val interval: Float = 0f,
     public val radiusMode: RadiusMode = RadiusMode.WIDTH,
     public var onDegreeChangeFinished: (() -> Unit)? = null,
-    public val startDegrees: Float = 0f
+    public val startDegrees: Float = 0f,
+    public val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    public val clockwise: Boolean = true,
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
+    private val _degreeAnimatable = Animatable(initialDegree)
     private var radiusState by mutableFloatStateOf(0f)
     private var thumbSizeState by mutableFloatStateOf(0f)
     internal val overshootAnimatable = Animatable(0f)
@@ -108,12 +115,17 @@ public class DialState(
         require(interval >= 0f) { "interval must be >= 0" }
     }
 
+    /** Whether the dial responds to drag input. Set by the [Dial] composable. */
+    public var enabled: Boolean = true
+        internal set
+
     /**
      * The absolute degree for rendering purposes.
-     * This is the actual angle on the screen (startDegrees + relative degree).
+     * For clockwise dials: startDegrees + degree.
+     * For counterclockwise dials: startDegrees - degree.
      */
     public val absoluteDegree: Float
-        get() = startDegrees + degree
+        get() = if (clockwise) startDegrees + degree else startDegrees - degree
 
     public var radius: Float
         internal set(value) {
@@ -150,11 +162,16 @@ public class DialState(
         }
         get() = degreeState
 
+    /** Normalized 0–1 value based on position within [degreeRange]. */
     public val value: Float
         get() {
             val range = degreeRange.endInclusive - degreeRange.start
             return if (range == 0f) 0f else (degree - degreeRange.start) / range
         }
+
+    /** [value] mapped to [valueRange]. */
+    public val mappedValue: Float
+        get() = valueRange.start + value * (valueRange.endInclusive - valueRange.start)
 
     public var overshootDecay: Float = 0.5f
         internal set
@@ -173,7 +190,71 @@ public class DialState(
         }
 
     public var onValueChange: (Float) -> Unit = {}
+
+    /**
+     * Animates [degree] to [targetDegree] using [animationSpec].
+     * Must be called from a coroutine scope.
+     */
+    public suspend fun animateTo(
+        targetDegree: Float,
+        animationSpec: AnimationSpec<Float> = spring(),
+    ) {
+        _degreeAnimatable.snapTo(degreeState)
+        _degreeAnimatable.animateTo(
+            targetValue = targetDegree.coerceIn(degreeRange),
+            animationSpec = animationSpec,
+        ) {
+            degreeState = value
+            onValueChange(value)
+        }
+    }
 }
+
+/**
+ * Creates and remembers a [DialState].
+ *
+ * @param initialDegree Initial dial position within [0, sweepDegrees].
+ * @param sweepDegrees Total arc sweep in degrees.
+ * @param startDegrees Visual starting position on screen (e.g. 180f for bottom).
+ * @param interval Snap interval in degrees. 0 means continuous rotation.
+ * @param steps Number of snap steps. When > 0, overrides [interval] by computing
+ *   `sweepDegrees / steps`.
+ * @param radiusMode Whether to derive radius from WIDTH or HEIGHT.
+ * @param valueRange The range that [DialState.mappedValue] maps to.
+ * @param clockwise When false, rotation is counterclockwise.
+ * @param onDegreeChangeFinished Called when the user finishes dragging.
+ */
+@Composable
+public fun rememberDialState(
+    initialDegree: Float = 0f,
+    sweepDegrees: Float = 360f,
+    startDegrees: Float = 0f,
+    interval: Float = 0f,
+    steps: Int = 0,
+    radiusMode: RadiusMode = RadiusMode.WIDTH,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    clockwise: Boolean = true,
+    onDegreeChangeFinished: (() -> Unit)? = null,
+): DialState {
+    val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
+    val degreeRange = 0f..sweepDegrees
+    return remember(degreeRange, effectiveInterval, radiusMode, startDegrees, valueRange, clockwise) {
+        DialState(
+            initialDegree = initialDegree,
+            degreeRange = degreeRange,
+            interval = effectiveInterval,
+            radiusMode = radiusMode,
+            onDegreeChangeFinished = onDegreeChangeFinished,
+            startDegrees = startDegrees,
+            valueRange = valueRange,
+            clockwise = clockwise,
+        )
+    }.also {
+        it.onDegreeChangeFinished = onDegreeChangeFinished
+    }
+}
+
+// ─── Simple (colors) overloads ───────────────────────────────────────────────
 
 /**
  * Simple Dial composable with color customization.
@@ -190,6 +271,10 @@ public fun Dial(
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
+    steps: Int = 0,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    clockwise: Boolean = true,
+    enabled: Boolean = true,
     overshootDecay: Float = 0.5f,
     overshootAnimationSpec: AnimationSpec<Float> = spring(),
     colors: DialColors = DialColors.default(),
@@ -204,6 +289,10 @@ public fun Dial(
         onDegreeChangeFinished = onDegreeChangeFinished,
         interactionSource = interactionSource,
         interval = interval,
+        steps = steps,
+        valueRange = valueRange,
+        clockwise = clockwise,
+        enabled = enabled,
         overshootDecay = overshootDecay,
         overshootAnimationSpec = overshootAnimationSpec,
         thumb = { state -> DefaultDialThumb(state, colors) },
@@ -225,14 +314,28 @@ public fun Dial(
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
+    steps: Int = 0,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    clockwise: Boolean = true,
+    enabled: Boolean = true,
     overshootDecay: Float = 0.5f,
     overshootAnimationSpec: AnimationSpec<Float> = spring(),
     thumb: @Composable (DialState) -> Unit,
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
+    val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
     val degreeRange = 0f..sweepDegrees
-    val state = remember(degreeRange, interval, radiusMode, startDegrees) {
-        DialState(degree, degreeRange, interval, radiusMode, onDegreeChangeFinished, startDegrees)
+    val state = remember(degreeRange, effectiveInterval, radiusMode, startDegrees, valueRange, clockwise) {
+        DialState(
+            initialDegree = degree,
+            degreeRange = degreeRange,
+            interval = effectiveInterval,
+            radiusMode = radiusMode,
+            onDegreeChangeFinished = onDegreeChangeFinished,
+            startDegrees = startDegrees,
+            valueRange = valueRange,
+            clockwise = clockwise,
+        )
     }
     state.onDegreeChangeFinished = onDegreeChangeFinished
     state.onValueChange = onDegreeChange
@@ -245,14 +348,64 @@ public fun Dial(
     Dial(
         state = state,
         modifier = modifier,
+        enabled = enabled,
         interactionSource = interactionSource,
         thumb = thumb,
-        track = track
+        track = track,
     )
 }
 
+// ─── State-hoisting overloads ─────────────────────────────────────────────────
+
+/**
+ * Dial composable that takes an externally-managed [DialState].
+ * Use [rememberDialState] to create and remember a [DialState].
+ */
 @Composable
-private fun Dial(
+public fun Dial(
+    state: DialState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    colors: DialColors = DialColors.default(),
+) {
+    Dial(
+        state = state,
+        modifier = modifier,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        thumb = { s -> DefaultDialThumb(s, colors) },
+        track = { s -> DefaultDialTrack(s, colors) },
+    )
+}
+
+/**
+ * Dial composable that takes an externally-managed [DialState] with full customization.
+ * Use [rememberDialState] to create and remember a [DialState].
+ */
+@Composable
+public fun Dial(
+    state: DialState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    thumb: @Composable (DialState) -> Unit,
+    track: @UiComposable @Composable (DialState) -> Unit,
+) {
+    state.enabled = enabled
+    DialImpl(
+        state = state,
+        modifier = modifier,
+        interactionSource = interactionSource,
+        thumb = thumb,
+        track = track,
+    )
+}
+
+// ─── Internal implementation ──────────────────────────────────────────────────
+
+@Composable
+private fun DialImpl(
     state: DialState,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource,
@@ -263,7 +416,17 @@ private fun Dial(
     val scope = rememberCoroutineScope()
 
     BoxWithConstraints(
-        modifier = modifier
+        modifier = modifier.semantics {
+            contentDescription = "Dial"
+            stateDescription = "${(state.value * 100).roundToInt()}%"
+            setProgress { targetValue ->
+                val clampedTarget = targetValue.coerceIn(0f, 1f)
+                val targetDegree = state.degreeRange.start +
+                        clampedTarget * (state.degreeRange.endInclusive - state.degreeRange.start)
+                scope.launch { state.animateTo(targetDegree) }
+                true
+            }
+        }
     ) {
         val dialSize by remember(constraints) {
             derivedStateOf {
@@ -279,9 +442,6 @@ private fun Dial(
         val transformOriginY = if (state.thumbSize > 0f) state.radius / state.thumbSize else 0f
 
         var thumbPosition by remember { mutableStateOf(Offset.Zero) }
-
-
-        var dragTracker by remember { mutableStateOf(Offset.Zero) }
         var draggingAngle by remember { mutableStateOf(state.degree.coerceIn(state.degreeRange)) }
         var currentDragInteraction by remember { mutableStateOf<DragInteraction.Start?>(null) }
 
@@ -309,8 +469,7 @@ private fun Dial(
                     .align(Alignment.TopCenter)
                     .graphicsLayer {
                         val angleInRadians = (state.absoluteDegree - 90f) * PI.toFloat() / 180f
-                        val thumbRadius =
-                            state.radius - state.thumbSize / 2f
+                        val thumbRadius = state.radius - state.thumbSize / 2f
 
                         val centerX = state.radius
                         val centerY = state.radius
@@ -319,7 +478,6 @@ private fun Dial(
                         val targetY = centerY + thumbRadius * kotlin.math.sin(angleInRadians)
 
                         val currentX = state.radius
-                        val currentY = state.thumbSize / 2f
 
                         translationX = targetX - currentX
                         translationY = targetY - (state.thumbSize / 2)
@@ -327,86 +485,94 @@ private fun Dial(
                     .onGloballyPositioned {
                         thumbPosition = it.positionInParent()
                     }
-                    .pointerInput(state.degreeRange) {
-                        val centerPx = Offset(state.radius, state.radius)
+                    .then(
+                        if (state.enabled) {
+                            Modifier
+                                .pointerInput(state.degreeRange) {
+                                    val centerPx = Offset(state.radius, state.radius)
 
-                        fun calculateAngle(offset: Offset): Float {
-                            val dx = offset.x - centerPx.x
-                            val dy = offset.y - centerPx.y
-                            val radians = atan2(dy, dx)
-                            val degrees = radians * 180f / PI.toFloat()
-                            return degrees
+                                    fun calculateAngle(offset: Offset): Float {
+                                        val dx = offset.x - centerPx.x
+                                        val dy = offset.y - centerPx.y
+                                        val radians = atan2(dy, dx)
+                                        val degrees = radians * 180f / PI.toFloat()
+                                        return degrees
+                                    }
+
+                                    var previousAngle by mutableStateOf(0f)
+                                    var dragOffset by mutableStateOf(Offset.Zero)
+                                    var dragInteraction: Interaction? = null
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            draggingAngle = state.degree
+                                            dragOffset = offset + thumbPosition
+                                            previousAngle = calculateAngle(dragOffset)
+                                            val interaction = DragInteraction.Start()
+                                            dragInteraction = interaction
+                                            scope.launch {
+                                                interactionSource.emit(interaction)
+                                            }
+                                        },
+                                        onDrag = { change, _ ->
+                                            dragOffset += change.positionChange()
+                                            val dragAngle = calculateAngle(dragOffset)
+                                            var delta = dragAngle - previousAngle
+
+                                            if (delta > 180f) delta -= 360f
+                                            if (delta < -180f) delta += 360f
+
+                                            if (!state.clockwise) delta = -delta
+
+                                            draggingAngle += delta
+
+                                            if (draggingAngle in state.degreeRange) {
+                                                scope.launch { state.overshootAnimatable.snapTo(0f) }
+                                                val newValue = state.calculateSnappedValue(draggingAngle)
+                                                if (newValue != state.degree) {
+                                                    state.onValueChange(newValue)
+                                                }
+                                            } else {
+                                                val clampedAngle = draggingAngle.coerceIn(state.degreeRange)
+                                                val rawOvershoot = when {
+                                                    draggingAngle < state.degreeRange.start ->
+                                                        draggingAngle - state.degreeRange.start
+                                                    else ->
+                                                        draggingAngle - state.degreeRange.endInclusive
+                                                }
+                                                scope.launch { state.overshootAnimatable.snapTo(rawOvershoot) }
+
+                                                val newValue = state.calculateSnappedValue(clampedAngle)
+                                                if (newValue != state.degree) {
+                                                    state.onValueChange(newValue)
+                                                }
+                                            }
+                                            previousAngle = dragAngle
+                                        },
+                                        onDragEnd = {
+                                            draggingAngle = state.degree
+                                            scope.launch {
+                                                state.overshootAnimatable.animateTo(
+                                                    0f,
+                                                    state.overshootAnimationSpec
+                                                )
+                                            }
+                                            state.onDegreeChangeFinished?.invoke()
+                                            (dragInteraction as? DragInteraction.Start)?.let {
+                                                scope.launch {
+                                                    interactionSource.emit(
+                                                        DragInteraction.Stop(it)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                                .pointerHoverIcon(PointerIcon.Hand, true)
+                                .hoverable(interactionSource)
+                        } else {
+                            Modifier
                         }
-
-                        var previousAngle by mutableStateOf(0f)
-                        var dragOffset by mutableStateOf(Offset.Zero)
-                        var dragInteraction: Interaction? = null
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                draggingAngle = state.degree
-                                dragOffset = offset + thumbPosition
-                                previousAngle = calculateAngle(dragOffset)
-                                val interaction = DragInteraction.Start()
-                                dragInteraction = interaction
-                                scope.launch {
-                                    interactionSource.emit(interaction)
-                                }
-                            },
-                            onDrag = { change, _ ->
-                                dragOffset += change.positionChange()
-                                dragTracker = dragOffset
-                                val dragAngle = calculateAngle(dragOffset)
-                                var delta = dragAngle - previousAngle
-
-                                if (delta > 180f) delta -= 360f
-                                if (delta < -180f) delta += 360f
-
-                                draggingAngle += delta
-
-                                if (draggingAngle in state.degreeRange) {
-                                    scope.launch { state.overshootAnimatable.snapTo(0f) }
-                                    val newValue = state.calculateSnappedValue(draggingAngle)
-                                    if (newValue != state.degree) {
-                                        state.onValueChange(newValue)
-                                    }
-                                } else {
-                                    val clampedAngle = draggingAngle.coerceIn(state.degreeRange)
-                                    val rawOvershoot = when {
-                                        draggingAngle < state.degreeRange.start ->
-                                            draggingAngle - state.degreeRange.start
-                                        else ->
-                                            draggingAngle - state.degreeRange.endInclusive
-                                    }
-                                    scope.launch { state.overshootAnimatable.snapTo(rawOvershoot) }
-
-                                    val newValue = state.calculateSnappedValue(clampedAngle)
-                                    if (newValue != state.degree) {
-                                        state.onValueChange(newValue)
-                                    }
-                                }
-                                previousAngle = dragAngle
-                            },
-                            onDragEnd = {
-                                dragTracker = Offset.Zero
-                                draggingAngle = state.degree
-                                scope.launch {
-                                    state.overshootAnimatable.animateTo(0f, state.overshootAnimationSpec)
-                                }
-                                state.onDegreeChangeFinished?.invoke()
-                                (dragInteraction as? DragInteraction.Start)?.let {
-                                    scope.launch {
-                                        interactionSource.emit(
-                                            DragInteraction.Stop(
-                                                it
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        )
-                    }
-                    .pointerHoverIcon(PointerIcon.Hand, true)
-                    .hoverable(interactionSource),
+                    ),
                 content = { }
             )
         }
@@ -429,7 +595,7 @@ private fun DefaultDialThumb(state: DialState, colors: DialColors) {
                 .drawBehind {
                     drawCircle(
                         color = colors.thumbStrokeColor,
-                        style = Stroke(width = 4.dp.toPx())
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx())
                     )
                     drawCircle(
                         color = colors.thumbColor,
@@ -504,55 +670,43 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                 scaleY = scale
                             }
                             .drawBehind {
-                                val baseStrokeWidth = trackWidth.toPx()
-                                val strokeWidth = baseStrokeWidth * strokeMultiplier
-                                val trackRadius = state.radius - 12.dp.toPx()
-                                val startAngle = state.startDegrees - 90f
+                                val effectiveStrokeWidth = trackWidth * strokeMultiplier
+                                // Arc center radius: state.radius - 12dp. Library's drawArc insets
+                                // by strokePx/2, so we pass center + strokePx/2 as outer radius.
+                                val arcCenterRadius = state.radius - 12.dp.toPx()
+                                val arcOuterRadius = arcCenterRadius + effectiveStrokeWidth.toPx() / 2f
 
                                 if (ringMaxSweep > 0f) {
                                     drawArc(
                                         color = colors.inactiveTrackColor.copy(alpha = alpha),
-                                        startAngle = startAngle,
+                                        startAngle = state.startDegrees,
                                         sweepAngle = ringMaxSweep,
-                                        topLeft = Offset(
-                                            center.x - trackRadius,
-                                            center.y - trackRadius
-                                        ),
-                                        size = Size(trackRadius * 2, trackRadius * 2),
-                                        useCenter = false,
-                                        style = Stroke(
-                                            width = strokeWidth,
-                                            cap = StrokeCap.Round
-                                        )
+                                        radius = arcOuterRadius,
+                                        strokeWidth = effectiveStrokeWidth,
+                                        strokeCap = StrokeCap.Round,
                                     )
                                 }
 
-                                if (ringSweep > 0f && strokeWidth > 0f) {
+                                val overshoot = if (isInnermostRing) state.overshootDegrees else 0f
+                                val effectiveActiveStart = state.startDegrees + minOf(0f, overshoot)
+                                val effectiveActiveSweep = ringSweep + abs(overshoot)
+                                if (effectiveActiveSweep > 0f && strokeMultiplier > 0f) {
                                     drawArc(
                                         color = colors.activeTrackColor.copy(alpha = alpha),
-                                        startAngle = startAngle,
-                                        sweepAngle = ringSweep,
-                                        topLeft = Offset(
-                                            center.x - trackRadius,
-                                            center.y - trackRadius
-                                        ),
-                                        size = Size(trackRadius * 2, trackRadius * 2),
-                                        useCenter = false,
-                                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                        startAngle = effectiveActiveStart,
+                                        sweepAngle = effectiveActiveSweep,
+                                        radius = arcOuterRadius,
+                                        strokeWidth = effectiveStrokeWidth,
+                                        strokeCap = StrokeCap.Round,
                                     )
                                 }
 
                                 if (state.interval > 0f && ringMaxSweep > 0f) {
-                                    val tickRangeStart = state.startDegrees
-                                    val tickRangeEnd = state.startDegrees + ringMaxSweep
-                                    val currentDegreeForTicks = if (isActiveRing) {
-                                        state.startDegrees + ringSweep
-                                    } else {
-                                        state.startDegrees
-                                    }
+                                    val currentDegreeForTicks = if (isActiveRing) ringSweep else 0f
 
                                     drawEveryInterval(
-                                        degreeRange = tickRangeStart..tickRangeEnd,
+                                        startDegrees = state.startDegrees,
+                                        sweepDegrees = ringMaxSweep,
                                         radius = state.radius,
                                         interval = state.interval,
                                         padding = 12.dp,
@@ -564,7 +718,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                             colors.inactiveTickColor.copy(alpha = alpha)
                                         }
                                         rotate(
-                                            degrees = data.degree,
+                                            degrees = data.rotationAngle,
                                             pivot = data.position
                                         ) {
                                             drawLine(

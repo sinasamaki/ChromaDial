@@ -77,12 +77,13 @@ fun CameraModeDial() {
                         .drawBehind {
                             // interval = 4° to get ~46 positions over 180° range (same as steps=45)
                             drawEveryInterval(
-                                degreeRange = -180f..0f,
+                                startDegrees = -180f,
+                                sweepDegrees = 180f,
                                 interval = 4f,
                                 radius = it.radius,
                             ) { data ->
                                 rotate(
-                                    data.degree,
+                                    data.rotationAngle,
                                     pivot = data.position
                                 ) {
                                     drawLine(
@@ -90,7 +91,7 @@ fun CameraModeDial() {
                                         start = data.position,
                                         end = data.position + Offset(
                                             0f,
-                                            if (data.degree in (-91f)..(-89f)) 30f else 10f
+                                            if (data.rotationAngle in (-91f)..(-89f)) 30f else 10f
                                         )
                                     )
                                 }
@@ -100,12 +101,13 @@ fun CameraModeDial() {
                 DialInterval(
                     modifier = Modifier
                         .graphicsLayer {
-                            rotationZ = it.absoluteDegree
+                            rotationZ = it.absoluteDegree + it.overshootDegrees
                         }
                         .fillMaxSize()
                         .padding(20.dp),
-                    degreeRange = -220f..0f,
-                    interval = 20f,  // 220 / 11 = 20° to get 12 positions (same as steps=10)
+                    startDegrees = -220f,
+                    sweepDegrees = 220f,
+                    spacing = 20f,  // 220 / 11 = 20° to get 12 positions (same as steps=10)
                 ) { data ->
                     Box(
                         modifier = Modifier

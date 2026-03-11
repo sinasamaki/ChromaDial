@@ -160,7 +160,7 @@ fun AmPmShadowClock() {
                         .drawWithContent {
                             drawContent()
                             rotate(
-                                degrees = minute
+                                degrees = minute + dialState.overshootDegrees
                             ) {
                                 drawLine(
                                     color = Zinc200,
@@ -180,14 +180,14 @@ fun AmPmShadowClock() {
         DialInterval(
             modifier = Modifier
                 .size(250.dp),
-            degreeRange = 0f..360f,
-            interval = 30f,
+            sweepDegrees = 360f,
+            spacing = 30f,
         ) { data ->
             if (data.index != 0)
                 Text(
                     text = "${data.index}",
                     modifier = Modifier
-                        .rotate(-data.degree - 90f)
+                        .rotate(-data.rotationAngle - 90f)
                         .padding(12.dp),
                     fontSize = 18.sp,
                     fontFamily = FontFamily.Monospace,
@@ -226,7 +226,7 @@ fun AmPmShadowClock() {
                         .fillMaxWidth()
                         .drawBehind {
                             rotate(
-                                degrees = animatedHour
+                                degrees = animatedHour + dialState.overshootDegrees
                             ) {
                                 drawLine(
                                     color = Zinc200,

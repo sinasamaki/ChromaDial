@@ -88,6 +88,8 @@ fun NutritionGoalDial() {
                             .fillMaxSize()
                             .drawBehind {
                                 val strokeWidth = 16.dp.toPx()
+                                val overshoot = it.overshootDegrees
+                                val activeStart = 270f - 90f + minOf(0f, overshoot)
 
                                 // Background track (lighter)
                                 drawArc(
@@ -104,11 +106,11 @@ fun NutritionGoalDial() {
                                 )
 
                                 // Active track (solid)
-                                val activeSweep = (proteinGrams / 300f) * 180f
+                                val activeSweep = (proteinGrams / 300f) * 180f + kotlin.math.abs(overshoot)
                                 if (activeSweep > 0f) {
                                     drawArc(
                                         color = Blue400,
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(
@@ -129,7 +131,7 @@ fun NutritionGoalDial() {
                                             ),
                                             center = Offset(center.x, size.height)
                                         ),
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(
@@ -169,6 +171,8 @@ fun NutritionGoalDial() {
                             .fillMaxSize()
                             .drawBehind {
                                 val strokeWidth = 16.dp.toPx()
+                                val overshoot = it.overshootDegrees
+                                val activeStart = 270f - 90f + minOf(0f, overshoot)
 
                                 // Background track (lighter)
                                 drawArc(
@@ -185,11 +189,11 @@ fun NutritionGoalDial() {
                                 )
 
                                 // Active track (solid)
-                                val activeSweep = (carbsGrams / 400f) * 180f
+                                val activeSweep = (carbsGrams / 400f) * 180f + kotlin.math.abs(overshoot)
                                 if (activeSweep > 0f) {
                                     drawArc(
                                         color = Yellow500,
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(
@@ -210,7 +214,7 @@ fun NutritionGoalDial() {
                                             ),
                                             center = Offset(center.x, size.height)
                                         ),
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(
@@ -250,6 +254,8 @@ fun NutritionGoalDial() {
                             .fillMaxSize()
                             .drawBehind {
                                 val strokeWidth = 16.dp.toPx()
+                                val overshoot = it.overshootDegrees
+                                val activeStart = 270f - 90f + minOf(0f, overshoot)
 
                                 // Background track (lighter)
                                 drawArc(
@@ -266,11 +272,11 @@ fun NutritionGoalDial() {
                                 )
 
                                 // Active track (solid)
-                                val activeSweep = (fatsGrams / 150f) * 180f
+                                val activeSweep = (fatsGrams / 150f) * 180f + kotlin.math.abs(overshoot)
                                 if (activeSweep > 0f) {
                                     drawArc(
                                         color = Red400,
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(
@@ -291,7 +297,7 @@ fun NutritionGoalDial() {
                                             ),
                                             center = Offset(center.x, size.height)
                                         ),
-                                        startAngle = 270f - 90f,
+                                        startAngle = activeStart,
                                         sweepAngle = activeSweep,
                                         topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
                                         size = Size(

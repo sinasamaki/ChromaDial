@@ -108,8 +108,9 @@ fun TemperatureDial() {
                 BoxWithConstraints {
                     val strokePx = with(LocalDensity.current) { 20.dp.toPx() }
                     val center = Offset(this.maxWidth.toPx() / 2f, this.maxHeight.toPx() / 2f)
-                    val startAngle = state.startDegrees - 90f
-                    val activeSweep = (state.degree - state.degreeRange.start).coerceAtLeast(1f)
+                    val overshoot = state.overshootDegrees
+                    val startAngle = state.startDegrees - 90f + minOf(0f, overshoot)
+                    val activeSweep = (state.degree - state.degreeRange.start).coerceAtLeast(1f) + kotlin.math.abs(overshoot)
 
                     val path =
                         remember(center, state.radius, strokePx, startAngle, activeSweep) {
@@ -174,8 +175,8 @@ fun TemperatureDial() {
                                     radius = 24.dp.toPx(),
                                     center = polarOffset(
                                         center = this.center,
-                                        radius = state.radius - (strokePx / 1),
-                                        degrees = state.absoluteDegree - 90f
+                                        radius = state.radius - strokePx,
+                                        degrees = state.absoluteDegree - 90f + overshoot
                                     )
                                 )
                             }
@@ -194,7 +195,7 @@ fun TemperatureDial() {
                                 ) {
                                     drawArc(
                                         color = color,
-                                        startAngle = state.absoluteDegree - 90f,
+                                        startAngle = state.absoluteDegree - 90f + overshoot,
                                         sweepAngle = -activeSweep * .4f,
                                         useCenter = false,
                                         style = Stroke(
@@ -220,7 +221,7 @@ fun TemperatureDial() {
                                 ) {
                                     drawArc(
                                         color = color,
-                                        startAngle = state.absoluteDegree - 90f,
+                                        startAngle = state.absoluteDegree - 90f + overshoot,
                                         sweepAngle = -activeSweep * .5f,
                                         useCenter = false,
                                         style = Stroke(

@@ -84,7 +84,7 @@ fun ProgressGaugeDial() {
                             // interval = 180 / 51 ≈ 3.53° to get ~52 positions (same as steps=50)
                             drawEveryInterval(
                                 dialState = it,
-                                interval = 180f / 51f,
+                                spacing = 180f / 51f,
                                 padding = (16).dp,
                             ) { data ->
                                 drawCircle(
@@ -94,7 +94,7 @@ fun ProgressGaugeDial() {
                                 )
 
                                 rotate(
-                                    degrees = data.degree,
+                                    degrees = data.rotationAngle,
                                     pivot = data.position,
                                 ) {
                                     drawLine(

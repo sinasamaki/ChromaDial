@@ -201,10 +201,10 @@ private fun RecordingDialTrack(state: DialState) {
                 )
 
                 rotate(
-                    state.degree
+                    state.degree + state.overshootDegrees
                 ) {
                     drawEveryInterval(
-                        degreeRange = 0f..360f,
+                        sweepDegrees = 360f,
                         radius = state.radius,
                         interval = 5f,
                         padding = 10.dp
@@ -214,7 +214,7 @@ private fun RecordingDialTrack(state: DialState) {
                             top = interval.position.y,
                         ) {
                             rotate(
-                                degrees = interval.degree,
+                                degrees = interval.rotationAngle,
                                 pivot = Offset(0f, 0f)
                             ) {
                                 drawLine(
@@ -229,7 +229,7 @@ private fun RecordingDialTrack(state: DialState) {
                     }
 
                     drawEveryInterval(
-                        degreeRange = 0f..360f,
+                        sweepDegrees = 360f,
                         radius = state.radius,
                         interval = 10f,
                         padding = 25.dp
@@ -239,7 +239,7 @@ private fun RecordingDialTrack(state: DialState) {
                             top = interval.position.y,
                         ) {
                             rotate(
-                                degrees = interval.degree,
+                                degrees = interval.rotationAngle,
                                 pivot = Offset(0f, 0f)
                             ) {
                                 drawLine(

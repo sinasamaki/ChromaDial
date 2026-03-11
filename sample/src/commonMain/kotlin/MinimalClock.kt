@@ -73,7 +73,7 @@ fun MinimalClock() {
                             path.close()
 
                             val matrix = Matrix()
-                            matrix.rotateZ(dialState.degree)
+                            matrix.rotateZ(dialState.degree + dialState.overshootDegrees)
                             matrix.translate(-center.x, -center.y)
                             path.transform(matrix)
                             path.transform(Matrix().apply { translate(center.x, center.y) })
@@ -102,8 +102,8 @@ fun MinimalClock() {
                                 color = Lime500,
                                 shape = CircleShape,
                             ),
-                        degreeRange = 0f..360f,
-                        interval = 30f,
+                        sweepDegrees = 360f,
+                        spacing = 30f,
                     ) { data ->
                         val showNumber by remember {
                             derivedStateOf {
@@ -115,7 +115,7 @@ fun MinimalClock() {
                             Text(
                                 text = "${data.index * 5}".padStart(2, '0'),
                                 modifier = Modifier
-                                    .rotate(-data.degree - 90f)
+                                    .rotate(-data.rotationAngle - 90f)
                                     .padding(12.dp),
                                 fontSize = 24.sp,
                                 fontFamily = FontFamily.Monospace,
@@ -165,7 +165,7 @@ fun MinimalClock() {
                             path.close()
 
                             val matrix = Matrix()
-                            matrix.rotateZ(dialState.degree)
+                            matrix.rotateZ(dialState.degree + dialState.overshootDegrees)
                             matrix.translate(-center.x, -center.y)
                             path.transform(matrix)
                             path.transform(Matrix().apply { translate(center.x, center.y) })
@@ -194,14 +194,14 @@ fun MinimalClock() {
                                 color = Lime500,
                                 shape = CircleShape,
                             ),
-                        degreeRange = 0f..360f,
-                        interval = 30f,
+                        sweepDegrees = 360f,
+                        spacing = 30f,
                     ) { data ->
                         if (data.index != 0)
                             Text(
                                 text = "${data.index}",
                                 modifier = Modifier
-                                    .rotate(-data.degree - 90f)
+                                    .rotate(-data.rotationAngle - 90f)
                                     .padding(12.dp),
                                 fontSize = 24.sp,
                                 fontFamily = FontFamily.Monospace,

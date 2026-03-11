@@ -54,7 +54,7 @@ fun GradientDial() {
                     Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            rotationZ = state.degree - 90f
+                            rotationZ = state.degree - 90f + state.overshootDegrees
                         }
                         .drawBehind {
                             val strokeWidth = 16.dp.toPx()
