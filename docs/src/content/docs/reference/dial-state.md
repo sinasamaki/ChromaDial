@@ -15,9 +15,13 @@ class DialState(
     val interval: Float = 0f,
     val radiusMode: RadiusMode = RadiusMode.WIDTH,
     var onDegreeChangeFinished: (() -> Unit)? = null,
-    val startDegrees: Float = 0f
+    val startDegrees: Float = 0f,
+    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    val clockwise: Boolean = true,
 )
 ```
+
+Use `rememberDialState()` to create and remember a `DialState` in a composable.
 
 ## Constructor Parameters
 
@@ -29,7 +33,7 @@ The initial rotation angle in degrees.
 ### degreeRange
 **Type:** `ClosedFloatingPointRange<Float>`
 
-The allowed range of rotation. The dial will clamp values to this range.
+The allowed range of rotation. The dial will clamp values to this range. This is always `0f..sweepDegrees`.
 
 ### interval
 **Type:** `Float`
@@ -55,6 +59,18 @@ Callback invoked when dragging ends.
 
 The absolute starting angle for the dial arc in screen coordinates. Used internally for positioning the thumb and track.
 
+### valueRange
+**Type:** `ClosedFloatingPointRange<Float>`
+**Default:** `0f..1f`
+
+The range that `mappedValue` maps to. Use this to get values in a custom domain (e.g., `0f..100f` for percentages).
+
+### clockwise
+**Type:** `Boolean`
+**Default:** `true`
+
+When `false`, the dial rotates counterclockwise.
+
 ## Properties
 
 ### degree
@@ -63,21 +79,17 @@ The absolute starting angle for the dial arc in screen coordinates. Used interna
 The current rotation angle in degrees, **relative to `startDegrees`**. This value ranges from `degreeRange.start` to `degreeRange.endInclusive` (typically `0` to `sweepDegrees`).
 
 ```kotlin
-// Reading the relative angle
 val currentAngle = state.degree
-
-// Writing (typically done internally)
-state.degree = 90f
 ```
 
 ### absoluteDegree
 **Type:** `Float` (read-only)
 
-The absolute rotation angle in screen coordinates. Calculated as `startDegrees + degree`. Use this for drawing operations that need the actual screen angle.
+The absolute rotation angle in screen coordinates. For clockwise dials this is `startDegrees + degree`; for counterclockwise dials this is `startDegrees - degree`. Use this for drawing operations that need the actual screen angle.
 
 ```kotlin
-// For a dial with startDegrees=270f and degree=90f:
-// absoluteDegree = 360f (pointing upward)
+// For a clockwise dial with startDegrees=270f and degree=90f:
+// absoluteDegree = 360f
 val screenAngle = state.absoluteDegree
 ```
 
@@ -98,26 +110,35 @@ val percentage = state.value * 100  // 0 to 100
 value = (degree - degreeRange.start) / (degreeRange.endInclusive - degreeRange.start)
 ```
 
+### mappedValue
+**Type:** `Float` (read-only)
+
+`value` mapped to `valueRange`. Useful when you want values in a custom unit:
+
+```kotlin
+// With valueRange = 0f..100f
+val temperature = state.mappedValue  // 0.0 to 100.0
+```
+
+**Formula:**
+```
+mappedValue = valueRange.start + value * (valueRange.endInclusive - valueRange.start)
+```
+
 ### degreeRange
 **Type:** `ClosedFloatingPointRange<Float>` (read-only)
 
 The allowed range for the `degree` property. This is always `0f..sweepDegrees`.
 
 ```kotlin
-// Get the sweep angle (total rotation range)
 val totalSweep = state.degreeRange.endInclusive - state.degreeRange.start
-
-// Check if degree is at start
-val isAtStart = state.degree == state.degreeRange.start
-
-// Check if degree is at end
 val isAtEnd = state.degree == state.degreeRange.endInclusive
 ```
 
 ### interval
 **Type:** `Float` (read-only)
 
-The degree interval between snap points, as specified during construction. When `0f`, the dial rotates continuously.
+The degree interval between snap points. When `0f`, the dial rotates continuously.
 
 ### radiusMode
 **Type:** `RadiusMode` (read-only)
@@ -130,12 +151,7 @@ The radius calculation mode, as specified during construction.
 The calculated radius in pixels. Set by the Dial composable based on constraints and `radiusMode`.
 
 ```kotlin
-// Draw a circle at the edge of the dial
-drawCircle(
-    color = Color.Blue,
-    radius = 4.dp.toPx(),
-    center = Offset(state.radius, 0f)
-)
+val arcRadius = state.radius - 12.dp.toPx()
 ```
 
 ### thumbSize
@@ -143,26 +159,61 @@ drawCircle(
 
 The measured size of the thumb composable in pixels. Set after the thumb is measured.
 
-```kotlin
-// Offset drawing by thumb size
-val padding = state.thumbSize / 2
-```
+### clockwise
+**Type:** `Boolean` (read-only)
 
-### overshotAngle
-**Type:** `Float` (read/write)
+Whether the dial rotates clockwise. Affects `absoluteDegree` and drag direction.
 
-The amount in degrees that the user has dragged beyond the allowed range. Useful for implementing rubber-band effects.
+### enabled
+**Type:** `Boolean` (read-only, set by Dial composable)
+
+Whether the dial responds to drag input.
+
+### overshootDegrees
+**Type:** `Float` (read-only, computed)
+
+The rendered overshoot offset when the user drags beyond the allowed range. This value is decay-adjusted (non-linear) for a natural rubber-band feel.
 
 - Negative when dragging below `degreeRange.start`
 - Positive when dragging above `degreeRange.endInclusive`
-- `0f` when within range or when drag ends
+- `0f` when within range or after drag ends (springs back to zero)
 
 ```kotlin
-// Scale down thumb when overshooting
-val scale = 1f - (state.overshotAngle.absoluteValue / 180f).coerceIn(0f, 0.3f)
+// The track uses this to extend the active arc visually during overshoot
+val overshoot = state.overshootDegrees
 ```
 
+### overshootDecay
+**Type:** `Float`
+**Default:** `0.5f`
+
+Controls how strongly the raw drag overshoot is dampened. `0f` means no dampening (linear); `1f` means full dampening (no visible overshoot).
+
+### overshootAnimationSpec
+**Type:** `AnimationSpec<Float>`
+**Default:** `spring()`
+
+The animation spec used when springing back from an overshoot position after the drag ends.
+
 ## Methods
+
+### animateTo
+
+```kotlin
+suspend fun animateTo(
+    targetDegree: Float,
+    animationSpec: AnimationSpec<Float> = spring(),
+)
+```
+
+Animates `degree` to `targetDegree`. Must be called from a coroutine scope. The target is clamped to `degreeRange`.
+
+```kotlin
+val scope = rememberCoroutineScope()
+Button(onClick = { scope.launch { state.animateTo(180f) } }) {
+    Text("Go to center")
+}
+```
 
 ### calculateSnappedValue
 
@@ -170,24 +221,11 @@ val scale = 1f - (state.overshotAngle.absoluteValue / 180f).coerceIn(0f, 0.3f)
 fun calculateSnappedValue(value: Float): Float
 ```
 
-Calculates the nearest snap position for a given degree value. Used internally to implement step snapping.
+Returns the nearest snap position for a given degree value. Used internally by the Dial.
 
-**Parameters:**
-- `value`: The degree value to snap
-
-**Returns:** The snapped degree value, clamped to the degree range
-
-**Behavior:**
 - If `interval == 0f`, returns the value clamped to the range (no snapping)
 - Otherwise, returns the nearest snap position based on the interval
-- The end of the range is always a valid snap point, even if the interval doesn't divide evenly
-
-```kotlin
-// With interval = 30f and degreeRange = 0f..100f
-// Snap positions: 0°, 30°, 60°, 90°, 100° (end is always valid)
-state.calculateSnappedValue(85f)  // Returns 90f (nearest regular snap)
-state.calculateSnappedValue(96f)  // Returns 100f (end of range)
-```
+- The end of the range is always a valid snap point
 
 ## Callbacks
 
@@ -207,17 +245,11 @@ Callback invoked when the user finishes dragging. Can be set via constructor or 
 
 ```kotlin
 thumb = { state ->
-    // Access state properties
-    val currentDegree = state.degree
-    val normalizedValue = state.value
-    val isOvershooting = state.overshotAngle != 0f
-
     Box(
         Modifier
             .size(32.dp)
             .graphicsLayer {
-                // Use overshot for visual feedback
-                alpha = if (isOvershooting) 0.7f else 1f
+                alpha = if (state.overshootDegrees != 0f) 0.7f else 1f
             }
             .background(Color.Blue, CircleShape)
     )
@@ -232,30 +264,22 @@ track = { state ->
         Modifier
             .fillMaxSize()
             .drawBehind {
-                // Use radius for drawing
-                val arcRadius = state.radius - state.thumbSize / 2
-
-                // Use startDegrees for arc positioning (absolute screen angle)
-                val startAngle = state.startDegrees - 90f
                 val sweepAngle = state.degreeRange.endInclusive - state.degreeRange.start
 
-                // Use degree for progress (relative to start)
-                val progress = state.degree
-
-                // Draw background arc
+                // Background arc
                 drawArc(
-                    color = Color.Gray,
-                    startAngle = startAngle,
+                    color = Gray300,
+                    startAngle = state.startDegrees,
                     sweepAngle = sweepAngle,
-                    // ...
+                    radius = state.radius,
                 )
 
-                // Draw progress arc
+                // Progress arc
                 drawArc(
-                    color = Color.Blue,
-                    startAngle = startAngle,
-                    sweepAngle = progress,
-                    // ...
+                    color = Blue500,
+                    startAngle = state.startDegrees,
+                    sweepAngle = state.degree,
+                    radius = state.radius,
                 )
             }
     )

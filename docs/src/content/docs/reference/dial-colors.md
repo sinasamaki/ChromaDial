@@ -9,7 +9,7 @@ description: API reference for the DialColors class.
 
 ```kotlin
 @Immutable
-class DialColors internal constructor(
+data class DialColors(
     val inactiveTrackColor: Color,
     val activeTrackColor: Color,
     val thumbColor: Color,
@@ -21,16 +21,16 @@ class DialColors internal constructor(
 
 ## Creating an Instance
 
-The constructor is internal. Use the `default()` factory method to create instances:
+Use the `default()` factory method to create instances with any combination of overrides:
 
 ```kotlin
 val colors = DialColors.default(
-    inactiveTrackColor = Color.Gray,
-    activeTrackColor = Color.Blue,
-    thumbColor = Color.White,
-    thumbStrokeColor = Color.Blue,
-    inactiveTickColor = Color.Gray,
-    activeTickColor = Color.Blue,
+    inactiveTrackColor = Zinc700,
+    activeTrackColor = Blue500,
+    thumbColor = Zinc950,
+    thumbStrokeColor = Blue400,
+    inactiveTickColor = Zinc700,
+    activeTickColor = Blue300,
 )
 ```
 
@@ -77,7 +77,7 @@ The fill color of the circular thumb (draggable handle).
 **Type:** `Color`
 **Default:** `Lime400`
 
-The stroke/border color of the thumb. The stroke width is 2dp.
+The stroke/border color of the thumb. The stroke width is 4dp.
 
 ### inactiveTickColor
 **Type:** `Color`
@@ -112,9 +112,9 @@ Dial(
     degree = degree,
     onDegreeChange = { degree = it },
     colors = DialColors.default(
-        activeTrackColor = Color.Cyan,
-        thumbStrokeColor = Color.Cyan,
-        activeTickColor = Color.Cyan,
+        activeTrackColor = Cyan500,
+        thumbStrokeColor = Cyan400,
+        activeTickColor = Cyan300,
     ),
 )
 ```
@@ -129,8 +129,8 @@ Dial(
     onDegreeChange = { degree = it },
     interval = 30f,  // Tick marks every 30 degrees
     colors = DialColors.default(
-        inactiveTickColor = Color.Gray.copy(alpha = 0.5f),
-        activeTickColor = Color.Blue,
+        inactiveTickColor = Zinc600,
+        activeTickColor = Blue400,
     ),
 )
 ```
@@ -141,14 +141,15 @@ When using `DialColors`, the Dial uses built-in default composables:
 
 ### Default Thumb
 - Circular shape with 24dp diameter
-- Filled with `thumbColor`
-- 2dp stroke with `thumbStrokeColor`
+- 16dp inner circle filled with `thumbColor`
+- 4dp stroke with `thumbStrokeColor`
 
 ### Default Track
 - 4dp stroke width with rounded caps
 - Inactive arc uses `inactiveTrackColor`
 - Active arc uses `activeTrackColor`
 - Tick marks drawn when `interval > 0`
+- **Overshoot animation**: The active arc visually extends when dragging beyond limits
 - **Multi-ring display**: When `sweepDegrees > 360`, completed rotations scale outward with animated transitions and decreasing alpha
 
 ## Multi-Ring Behavior
