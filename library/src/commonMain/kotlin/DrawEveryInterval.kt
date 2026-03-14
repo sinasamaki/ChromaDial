@@ -2,12 +2,9 @@ package com.sinasamaki.chroma.dial
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -37,28 +34,25 @@ public data class IntervalData(
  *
  * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock)
  * @param sweepDegrees Total arc sweep in degrees
- * @param radius Arc radius in pixels (before padding)
+ * @param center Center of the arc in pixels
+ * @param radius Arc radius in pixels
  * @param spacing Degree spacing between adjacent interval points
- * @param paddingPx Inset from the arc radius in pixels
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for computing
  *   [IntervalData.inActiveRange]; null means all intervals are inactive
  */
 internal fun buildIntervalData(
     startDegrees: Float,
     sweepDegrees: Float,
+    center: Offset,
     radius: Float,
     spacing: Float,
-    paddingPx: Float,
     currentDegree: Float? = null,
 ): List<IntervalData> {
     val path = Path().apply {
         addArc(
             oval = Rect(
-                offset = Offset(paddingPx, paddingPx),
-                size = Size(
-                    width = (radius * 2) - (paddingPx * 2),
-                    height = (radius * 2) - (paddingPx * 2),
-                )
+                center = center,
+                radius = radius,
             ),
             startAngleDegrees = startDegrees - 90f,
             sweepAngleDegrees = sweepDegrees,
@@ -111,13 +105,13 @@ internal fun buildIntervalData(
  * @param dialState The dial state to derive arc geometry from.
  * @param spacing Degree spacing between adjacent draw positions. Note: this controls the visual
  *   drawing cadence and is independent of the dial's snap interval ([DialState.interval]).
- * @param padding Inset from the arc radius.
+ * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
  * @param onDraw Called for each interval with its [IntervalData].
  */
 public fun DrawScope.drawEveryInterval(
     dialState: DialState,
     spacing: Float,
-    padding: Dp = 0.dp,
+    center: Offset = this.center,
     onDraw: DrawScope.(IntervalData) -> Unit,
 ) {
     val overshoot = dialState.overshootDegrees
@@ -125,9 +119,9 @@ public fun DrawScope.drawEveryInterval(
     val items = buildIntervalData(
         startDegrees = dialState.startDegrees + minOf(0f, overshoot),
         sweepDegrees = sweepDegrees + abs(overshoot),
+        center = center,
         radius = dialState.radius,
         spacing = spacing,
-        paddingPx = padding.toPx(),
         currentDegree = dialState.degree + maxOf(0f, overshoot),
     )
     for (item in items) {
@@ -136,13 +130,13 @@ public fun DrawScope.drawEveryInterval(
 }
 
 /**
- * Draws content at regular [interval]-degree intervals along an arc.
+ * Draws content at regular [spacing]-degree intervals along an arc.
  *
  * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
  * @param sweepDegrees Total arc sweep in degrees.
  * @param radius Arc radius in pixels.
- * @param interval Degree spacing between adjacent draw positions.
- * @param padding Inset from the arc radius.
+ * @param spacing Degree spacing between adjacent draw positions.
+ * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
  * @param onDraw Called for each interval with its [IntervalData].
@@ -151,17 +145,17 @@ public fun DrawScope.drawEveryInterval(
     startDegrees: Float = 0f,
     sweepDegrees: Float,
     radius: Float,
-    interval: Float,
-    padding: Dp = 0.dp,
+    spacing: Float,
+    center: Offset = this.center,
     currentDegree: Float? = null,
     onDraw: DrawScope.(IntervalData) -> Unit,
 ) {
     val items = buildIntervalData(
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
+        center = center,
         radius = radius,
-        spacing = interval,
-        paddingPx = padding.toPx(),
+        spacing = spacing,
         currentDegree = currentDegree,
     )
     for (item in items) {

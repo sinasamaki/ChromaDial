@@ -133,7 +133,6 @@ track = { state ->
                 drawEveryInterval(
                     dialState = state,
                     spacing = 30f,   // degrees between each tick mark
-                    padding = 16.dp,
                 ) { data ->
                     rotate(data.rotationAngle, pivot = data.position) {
                         drawLine(
@@ -149,15 +148,15 @@ track = { state ->
 }
 ```
 
-When using explicit parameters instead of a `DialState`, the parameter is named `interval`:
+With explicit parameters, you can also pass a custom `center` offset (defaults to the `DrawScope`'s center):
 
 ```kotlin
 drawEveryInterval(
     startDegrees = 180f,
     sweepDegrees = 275f,
     radius = state.radius,
-    interval = 30f,
-    padding = 16.dp,
+    spacing = 30f,
+    center = this.center,  // optional, defaults to DrawScope center
     currentDegree = state.degree,
 ) { data -> /* ... */ }
 ```
@@ -260,7 +259,6 @@ DialInterval(
     sweepDegrees = 275f,
     radius = state.radius,   // null = use layout width
     spacing = 30f,
-    padding = 8.dp,
     currentDegree = state.degree,
 ) { data ->
     Text("${data.index}")

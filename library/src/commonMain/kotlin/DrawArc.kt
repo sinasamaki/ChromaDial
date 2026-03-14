@@ -28,18 +28,18 @@ public fun DrawScope.drawArc(
     startAngle: Float,
     sweepAngle: Float,
     radius: Float,
+    center: Offset = this.center,
     strokeWidth: Dp = 8.dp,
     strokeCap: StrokeCap = StrokeCap.Round,
 ) {
     val strokePx = strokeWidth.toPx()
-    val arcRadius = radius - strokePx / 2f
     drawArc(
         color = color,
         startAngle = startAngle - 90f,
         sweepAngle = sweepAngle,
         useCenter = false,
-        topLeft = Offset(center.x - arcRadius, center.y - arcRadius),
-        size = Size(arcRadius * 2f, arcRadius * 2f),
+        topLeft = Offset(center.x - radius, center.y - radius),
+        size = Size(radius * 2f, radius * 2f),
         style = Stroke(width = strokePx, cap = strokeCap),
     )
 }
@@ -66,14 +66,13 @@ public fun DrawScope.drawArc(
     strokeCap: StrokeCap = StrokeCap.Round,
 ) {
     val strokePx = strokeWidth.toPx()
-    val arcRadius = radius - strokePx / 2f
     drawArc(
         brush = brush,
         startAngle = startAngle - 90f,
         sweepAngle = sweepAngle,
         useCenter = false,
-        topLeft = Offset(center.x - arcRadius, center.y - arcRadius),
-        size = Size(arcRadius * 2f, arcRadius * 2f),
+        topLeft = Offset(center.x - radius, center.y - radius),
+        size = Size(radius * 2f, radius * 2f),
         style = Stroke(width = strokePx, cap = strokeCap),
     )
 }
