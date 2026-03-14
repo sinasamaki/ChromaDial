@@ -158,7 +158,7 @@ fun TimerDial() {
                                     sweepDegrees = 360f,
                                     radius = it.radius,
                                     padding = 25.dp,
-                                    interval = 30f,
+                                    spacing = 30f,
                                 ) { data ->
                                     rotate(
                                         degrees = data.rotationAngle,
@@ -178,7 +178,7 @@ fun TimerDial() {
                                     sweepDegrees = 360f,
                                     radius = it.radius,
                                     padding = 25.dp,
-                                    interval = 6f,
+                                    spacing = 6f,
                                 ) { data ->
                                     rotate(
                                         degrees = data.rotationAngle,

@@ -136,12 +136,12 @@ public fun DrawScope.drawEveryInterval(
 }
 
 /**
- * Draws content at regular [interval]-degree intervals along an arc.
+ * Draws content at regular [spacing]-degree intervals along an arc.
  *
  * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
  * @param sweepDegrees Total arc sweep in degrees.
  * @param radius Arc radius in pixels.
- * @param interval Degree spacing between adjacent draw positions.
+ * @param spacing Degree spacing between adjacent draw positions.
  * @param padding Inset from the arc radius.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
@@ -151,7 +151,7 @@ public fun DrawScope.drawEveryInterval(
     startDegrees: Float = 0f,
     sweepDegrees: Float,
     radius: Float,
-    interval: Float,
+    spacing: Float,
     padding: Dp = 0.dp,
     currentDegree: Float? = null,
     onDraw: DrawScope.(IntervalData) -> Unit,
@@ -160,7 +160,7 @@ public fun DrawScope.drawEveryInterval(
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
         radius = radius,
-        spacing = interval,
+        spacing = spacing,
         paddingPx = padding.toPx(),
         currentDegree = currentDegree,
     )

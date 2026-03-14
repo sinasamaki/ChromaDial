@@ -708,7 +708,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         startDegrees = state.startDegrees,
                                         sweepDegrees = ringMaxSweep,
                                         radius = state.radius,
-                                        interval = state.interval,
+                                        spacing = state.interval,
                                         padding = 12.dp,
                                         currentDegree = currentDegreeForTicks,
                                     ) { data ->

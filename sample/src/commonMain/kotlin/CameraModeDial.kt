@@ -79,7 +79,7 @@ fun CameraModeDial() {
                             drawEveryInterval(
                                 startDegrees = -180f,
                                 sweepDegrees = 180f,
-                                interval = 4f,
+                                spacing = 4f,
                                 radius = it.radius,
                             ) { data ->
                                 rotate(
