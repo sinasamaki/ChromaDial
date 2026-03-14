@@ -672,10 +672,6 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                 scaleY = scale
                             }
                             .drawBehind {
-                                drawRect(
-                                    color = Red500,
-                                    style = Stroke(width = 1f)
-                                )
                                 val effectiveStrokeWidth = trackWidth * strokeMultiplier
                                 // Arc center radius: state.radius - 12dp. Library's drawArc insets
                                 // by strokePx/2, so we pass center + strokePx/2 as outer radius.
