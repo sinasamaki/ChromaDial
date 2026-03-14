@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.drawEveryInterval
+import kotlin.math.abs
 
 @Composable
 fun ProgressGaugeDial() {
@@ -82,10 +83,13 @@ fun ProgressGaugeDial() {
                         .fillMaxSize()
                         .drawBehind {
                             // interval = 180 / 51 ≈ 3.53° to get ~52 positions (same as steps=50)
+                            val overshoot = it.overshootDegrees
                             drawEveryInterval(
-                                dialState = it,
+                                startDegrees = it.startDegrees + minOf(0f, overshoot),
+                                sweepDegrees = (it.degreeRange.endInclusive - it.degreeRange.start) + abs(overshoot),
+                                radius = it.radius - 16.dp.toPx(),
                                 spacing = 180f / 51f,
-                                padding = (16).dp,
+                                currentDegree = it.degree + maxOf(0f, overshoot),
                             ) { data ->
                                 drawCircle(
                                     color = Zinc800,

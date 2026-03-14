@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -160,7 +161,7 @@ public class DialState(
         set(newVal) {
             degreeState = newVal
         }
-        get() = degreeState
+        get() = if (clockwise) degreeState else -degreeState
 
     /** Normalized 0–1 value based on position within [degreeRange]. */
     public val value: Float
@@ -186,7 +187,8 @@ public class DialState(
             if (overshootDecay >= 1f) return 0f
             val k = 0.05f * overshootDecay / (1f - overshootDecay)
             val sign = if (x < 0f) -1f else 1f
-            return sign * (1f - kotlin.math.exp(-kotlin.math.abs(x) * k)) / k
+            val value = sign * (1f - kotlin.math.exp(-kotlin.math.abs(x) * k)) / k
+            return if (clockwise) value else -value
         }
 
     public var onValueChange: (Float) -> Unit = {}
@@ -670,18 +672,21 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                 scaleY = scale
                             }
                             .drawBehind {
+                                drawRect(
+                                    color = Red500,
+                                    style = Stroke(width = 1f)
+                                )
                                 val effectiveStrokeWidth = trackWidth * strokeMultiplier
                                 // Arc center radius: state.radius - 12dp. Library's drawArc insets
                                 // by strokePx/2, so we pass center + strokePx/2 as outer radius.
                                 val arcCenterRadius = state.radius - 12.dp.toPx()
-                                val arcOuterRadius = arcCenterRadius + effectiveStrokeWidth.toPx() / 2f
 
                                 if (ringMaxSweep > 0f) {
                                     drawArc(
                                         color = colors.inactiveTrackColor.copy(alpha = alpha),
                                         startAngle = state.startDegrees,
                                         sweepAngle = ringMaxSweep,
-                                        radius = arcOuterRadius,
+                                        radius = arcCenterRadius,
                                         strokeWidth = effectiveStrokeWidth,
                                         strokeCap = StrokeCap.Round,
                                     )
@@ -695,7 +700,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         color = colors.activeTrackColor.copy(alpha = alpha),
                                         startAngle = effectiveActiveStart,
                                         sweepAngle = effectiveActiveSweep,
-                                        radius = arcOuterRadius,
+                                        radius = arcCenterRadius,
                                         strokeWidth = effectiveStrokeWidth,
                                         strokeCap = StrokeCap.Round,
                                     )
@@ -707,9 +712,8 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                     drawEveryInterval(
                                         startDegrees = state.startDegrees,
                                         sweepDegrees = ringMaxSweep,
-                                        radius = state.radius,
+                                        radius = arcCenterRadius,
                                         spacing = state.interval,
-                                        padding = 12.dp,
                                         currentDegree = currentDegreeForTicks,
                                     ) { data ->
                                         val tickColor = if (data.inActiveRange && isActiveRing) {

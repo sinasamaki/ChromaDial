@@ -42,7 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.DialInterval
+import com.sinasamaki.chroma.dial.drawArc
 import com.sinasamaki.chroma.dial.drawEveryInterval
+import kotlin.math.absoluteValue
 
 @Composable
 fun TimerDial() {
@@ -64,8 +66,7 @@ fun TimerDial() {
         )
         // With startDegrees=-1440, sweepDegrees=1440, degree now goes from 0 to 1440
         // Initial 1440f is at the end of range (0 minutes), was 0f when using absolute degrees
-        val sweepDegrees = 360f * 4
-        var degree by remember { mutableFloatStateOf(sweepDegrees) }
+        var degree by remember { mutableFloatStateOf(0f) }
         val animatedDegree by animateFloatAsState(
             targetValue = degree,
             animationSpec = spring(
@@ -74,7 +75,7 @@ fun TimerDial() {
         )
 
         // Minutes calculation: at degree=sweepDegrees (1440), minutes=0; at degree=0, minutes=240
-        val totalMinutes = ((sweepDegrees - degree) / 6).toInt()
+        val totalMinutes = ((degree) / 6).toInt()
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60
 
@@ -95,7 +96,8 @@ fun TimerDial() {
             degree = animatedDegree,
             onDegreeChange = { degree = it },
             modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-            startDegrees = -360f * 4,
+//            startDegrees = -360f * 4,
+            clockwise = false,
             sweepDegrees = 360f * 4,
             interval = 6f,
             thumb = {
@@ -103,6 +105,10 @@ fun TimerDial() {
                     Modifier.fillMaxSize()
                 )
             },
+            overshootAnimationSpec = spring(
+                stiffness = Spring.StiffnessVeryLow,
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+            ),
             track = {
                 Box(
                     Modifier
@@ -120,8 +126,7 @@ fun TimerDial() {
                             )
 
                             // Calculate elapsed degrees from the end of range, extended by overshoot
-                            val elapsedDegrees = sweepDegrees - it.degree + maxOf(0f, -it.overshootDegrees)
-                            val numRings = (elapsedDegrees / 360).toInt()
+                            val numRings = (it.degree.absoluteValue / 360).toInt()
                             val baseRadius = (size.width / 2)
                             val ringSpacing = 3.dp.toPx()
 
@@ -132,6 +137,7 @@ fun TimerDial() {
                                     style = Stroke(width = 2.dp.toPx())
                                 )
                             }
+                            val width = (it.radius * .6f)
                             drawArc(
                                 brush = Brush.radialGradient(
                                     colors = listOf(
@@ -139,25 +145,19 @@ fun TimerDial() {
                                         Red500,
                                     )
                                 ),
-                                startAngle = -90f,
-                                // Sweep counter-clockwise (negative) based on elapsed degrees
-                                sweepAngle = -(elapsedDegrees % 360f),
-                                topLeft = rect.topLeft,
-                                size = rect.size,
-                                useCenter = false,
-                                style = Stroke(
-                                    width = strokeWidth.toPx(),
-                                )
-
+                                startAngle = 0f,
+                                sweepAngle = (it.degree % 360f),
+                                radius = it.radius - width / 2,
+                                strokeWidth = width.toDp(),
+                                strokeCap = StrokeCap.Butt
                             )
                             rotate(
-                                degrees = it.absoluteDegree + it.overshootDegrees
+                                degrees = (it.degree + it.overshootDegrees)
                             ) {
                                 // interval = 30° for 13 positions around full circle (same as steps=11)
                                 drawEveryInterval(
                                     sweepDegrees = 360f,
-                                    radius = it.radius,
-                                    padding = 25.dp,
+                                    radius = it.radius - 25.dp.toPx(),
                                     spacing = 30f,
                                 ) { data ->
                                     rotate(
@@ -176,8 +176,7 @@ fun TimerDial() {
                                 // interval = 6° for 61 positions (same as steps=59)
                                 drawEveryInterval(
                                     sweepDegrees = 360f,
-                                    radius = it.radius,
-                                    padding = 25.dp,
+                                    radius = it.radius - 25.dp.toPx(),
                                     spacing = 6f,
                                 ) { data ->
                                     rotate(
@@ -196,17 +195,21 @@ fun TimerDial() {
                             }
 
                             if (degree == 0f) {
-                                drawCircle(
-                                    color = Red500,
-                                    radius = 8.dp.toPx()
-                                )
-                                drawLine(
-                                    color = Red500,
-                                    start = Offset(center.x, 45.dp.toPx()),
-                                    end = center,
-                                    strokeWidth = 4.dp.toPx(),
-                                    cap = StrokeCap.Round,
-                                )
+                                rotate(
+                                    degrees = it.overshootDegrees
+                                ) {
+                                    drawCircle(
+                                        color = Red500,
+                                        radius = 8.dp.toPx()
+                                    )
+                                    drawLine(
+                                        color = Red500,
+                                        start = Offset(center.x, 45.dp.toPx()),
+                                        end = center,
+                                        strokeWidth = 4.dp.toPx(),
+                                        cap = StrokeCap.Round,
+                                    )
+                                }
                             }
                         }
                 ) {
@@ -238,7 +241,7 @@ fun TimerDial() {
                 DialInterval(
                     modifier = Modifier
                         .graphicsLayer {
-                            rotationZ = it.absoluteDegree
+                            rotationZ = it.degree
                         }
                         .fillMaxSize(),
                     sweepDegrees = 360f,

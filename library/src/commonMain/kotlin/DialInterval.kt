@@ -8,9 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
 /**
@@ -20,7 +19,6 @@ import kotlin.math.abs
  * @param state The dial state to derive arc geometry from.
  * @param modifier Modifier for the container.
  * @param spacing Degree spacing between adjacent interval positions.
- * @param padding Inset from the arc radius.
  * @param currentDegree Current degree in the 0..sweepDegrees space for determining
  *   [IntervalData.inActiveRange].
  * @param onIntervalContent Composable content for each interval.
@@ -30,7 +28,6 @@ public fun DialInterval(
     state: DialState,
     modifier: Modifier = Modifier,
     spacing: Float,
-    padding: Dp = 0.dp,
     currentDegree: Float? = null,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
@@ -42,7 +39,6 @@ public fun DialInterval(
         sweepDegrees = sweepDegrees + abs(overshoot),
         radius = state.radius,
         spacing = spacing,
-        padding = padding,
         currentDegree = currentDegree,
         onIntervalContent = onIntervalContent,
     )
@@ -56,7 +52,6 @@ public fun DialInterval(
  * @param sweepDegrees Total arc sweep in degrees.
  * @param radius Arc radius in pixels, or null to use the layout width.
  * @param spacing Degree spacing between adjacent interval positions.
- * @param padding Inset from the arc radius.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
  * @param onIntervalContent Composable content for each interval.
@@ -68,7 +63,6 @@ public fun DialInterval(
     sweepDegrees: Float,
     radius: Float? = null,
     spacing: Float,
-    padding: Dp = 0.dp,
     currentDegree: Float? = null,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
@@ -78,7 +72,6 @@ public fun DialInterval(
         sweepDegrees = sweepDegrees,
         radius = radius,
         spacing = spacing,
-        padding = padding,
         currentDegree = currentDegree,
         onIntervalContent = onIntervalContent,
     )
@@ -91,24 +84,21 @@ private fun DialIntervalImpl(
     sweepDegrees: Float,
     radius: Float? = null,
     spacing: Float,
-    padding: Dp,
     currentDegree: Float?,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
     val density = LocalDensity.current
-
     BoxWithConstraints(modifier = modifier) {
         val layoutWidth = constraints.maxWidth.toFloat()
         val radiusPx = radius ?: (layoutWidth / 2f)
-        val paddingPx = with(density) { padding.toPx() }
 
-        val items = remember(startDegrees, sweepDegrees, radiusPx, spacing, paddingPx, currentDegree) {
+        val items = remember(startDegrees, sweepDegrees, radiusPx, spacing, currentDegree) {
             buildIntervalData(
                 startDegrees = startDegrees,
                 sweepDegrees = sweepDegrees,
+                center = Offset(radiusPx, radiusPx),
                 radius = radiusPx,
                 spacing = spacing,
-                paddingPx = paddingPx,
                 currentDegree = currentDegree,
             )
         }
