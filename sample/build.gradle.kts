@@ -7,18 +7,25 @@ plugins {
 
 kotlin {
     jvm()
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
 
     sourceSets {
         commonMain.dependencies {
             implementation(project(":library"))
-            implementation(compose.desktop.currentOs)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.ui)
             implementation(compose.materialIconsExtended)
-            implementation(libs.kotlinx.coroutines.swing)
             implementation(compose.components.resources)
+        }
+
+        jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.swing)
         }
     }
 }
