@@ -69,6 +69,12 @@ fun Sample() {
             item {
                 VoiceRecorderDial()
             }
+            item {
+                NeumorphicDial()
+            }
+            item {
+                DynamicParamsDial()
+            }
         }
     }
 

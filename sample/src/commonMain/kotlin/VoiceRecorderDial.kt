@@ -93,7 +93,7 @@ private fun RecordingTimestamp(hours: Int, minutes: Int, seconds: Int) {
     ) {
         PulseIndicator()
         Text(
-            text = "%02d:%02d:%02d".format(hours, minutes, seconds),
+            text = "${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
             fontFamily = FontFamily.Monospace,
             fontSize = 18.sp,
             color = Zinc800,

@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.sinasamaki"
-version = "1.0.0-Alpha6"
+version = "1.0.0-Alpha7"
 
 kotlin {
     // Enable explicit API mode for better library design
@@ -40,6 +40,9 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 //    linuxX64()
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {

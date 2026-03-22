@@ -98,11 +98,11 @@ public enum class RadiusMode {
 @Stable
 public class DialState(
     initialDegree: Float,
-    public val degreeRange: ClosedFloatingPointRange<Float>,
+    degreeRange: ClosedFloatingPointRange<Float>,
     public val interval: Float = 0f,
     public val radiusMode: RadiusMode = RadiusMode.WIDTH,
     public var onDegreeChangeFinished: (() -> Unit)? = null,
-    public val startDegrees: Float = 0f,
+    startDegrees: Float = 0f,
     public val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     public val clockwise: Boolean = true,
 ) {
@@ -112,6 +112,9 @@ public class DialState(
     private var thumbSizeState by mutableFloatStateOf(0f)
     internal val overshootAnimatable = Animatable(0f)
 
+    private var _degreeRange by mutableStateOf(degreeRange)
+    private var startDegreesState by mutableFloatStateOf(startDegrees)
+
     init {
         require(interval >= 0f) { "interval must be >= 0" }
     }
@@ -120,13 +123,24 @@ public class DialState(
     public var enabled: Boolean = true
         internal set
 
+    public var startDegrees: Float
+        get() = startDegreesState
+        internal set(value) { startDegreesState = value }
+
+    public var degreeRange: ClosedFloatingPointRange<Float>
+        get() = _degreeRange
+        internal set(value) { _degreeRange = value }
+
     /**
      * The absolute degree for rendering purposes.
-     * For clockwise dials: startDegrees + degree.
-     * For counterclockwise dials: startDegrees - degree.
+     * For clockwise dials: startDegrees + degree (clamped to degreeRange).
+     * For counterclockwise dials: startDegrees - degree (clamped to degreeRange).
      */
     public val absoluteDegree: Float
-        get() = if (clockwise) startDegrees + degree else startDegrees - degree
+        get() {
+            val clamped = degree.coerceIn(degreeRange)
+            return if (clockwise) startDegrees + clamped else startDegrees - clamped
+        }
 
     public var radius: Float
         internal set(value) {
@@ -239,11 +253,10 @@ public fun rememberDialState(
     onDegreeChangeFinished: (() -> Unit)? = null,
 ): DialState {
     val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    val degreeRange = 0f..sweepDegrees
-    return remember(degreeRange, effectiveInterval, radiusMode, startDegrees, valueRange, clockwise) {
+    return remember(effectiveInterval, radiusMode, valueRange, clockwise) {
         DialState(
             initialDegree = initialDegree,
-            degreeRange = degreeRange,
+            degreeRange = 0f..sweepDegrees,
             interval = effectiveInterval,
             radiusMode = radiusMode,
             onDegreeChangeFinished = onDegreeChangeFinished,
@@ -253,6 +266,9 @@ public fun rememberDialState(
         )
     }.also {
         it.onDegreeChangeFinished = onDegreeChangeFinished
+        it.startDegrees = startDegrees
+        it.degreeRange = 0f..sweepDegrees
+        if (it.degree > sweepDegrees) it.degree = sweepDegrees
     }
 }
 
@@ -326,11 +342,10 @@ public fun Dial(
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
     val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    val degreeRange = 0f..sweepDegrees
-    val state = remember(degreeRange, effectiveInterval, radiusMode, startDegrees, valueRange, clockwise) {
+    val state = remember(effectiveInterval, radiusMode, valueRange, clockwise) {
         DialState(
             initialDegree = degree,
-            degreeRange = degreeRange,
+            degreeRange = 0f..sweepDegrees,
             interval = effectiveInterval,
             radiusMode = radiusMode,
             onDegreeChangeFinished = onDegreeChangeFinished,
@@ -341,10 +356,14 @@ public fun Dial(
     }
     state.onDegreeChangeFinished = onDegreeChangeFinished
     state.onValueChange = onDegreeChange
-    state.degree = degree
+    state.startDegrees = startDegrees
+    state.degreeRange = 0f..sweepDegrees
+    val clampedDegree = degree.coerceIn(state.degreeRange)
+    state.degree = clampedDegree
     SideEffect {
         state.overshootDecay = overshootDecay
         state.overshootAnimationSpec = overshootAnimationSpec
+        if (clampedDegree != degree) onDegreeChange(clampedDegree)
     }
 
     Dial(
