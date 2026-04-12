@@ -75,6 +75,15 @@ fun Sample() {
             item {
                 DynamicParamsDial()
             }
+            item {
+                WatchFaceDial()
+            }
+            item {
+                Type3()
+            }
+            item {
+                MonthDurationPicker()
+            }
         }
     }
 

@@ -103,10 +103,11 @@ fun CoffeeGrindSettingDial() {
                 val grind = (1 + state.value * 9).roundToInt()
 
                 BoxWithConstraints {
-                    val strokePx = 20.dp.toPx()
+                    val density = LocalDensity.current
+                    val strokePx = with(density) { 20.dp.toPx() }
                     val center = Offset(this.maxWidth.toPx() / 2f, this.maxHeight.toPx() / 2f)
                     val overshoot = state.overshootDegrees
-                    val startAngle = state.startDegrees - 90f + minOf(0f, overshoot)
+                    val startAngle = state.startDegrees + minOf(0f, overshoot)
                     val activeSweep = (state.degree - state.degreeRange.start).coerceAtLeast(1f) + kotlin.math.abs(overshoot)
 
                     val path = remember(center, state.radius, strokePx, startAngle, activeSweep) {
@@ -116,7 +117,7 @@ fun CoffeeGrindSettingDial() {
                             startAngleDegrees = startAngle,
                             sweepAngleDegrees = activeSweep,
                             tubeRadius = strokePx / 2,
-                            cornerRadius = strokePx * .5f,
+                            density = density,
                         )
                     }
 

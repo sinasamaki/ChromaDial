@@ -479,6 +479,7 @@ private fun DialImpl(
                 .graphicsLayer {
                     rotationZ = state.absoluteDegree + state.overshootDegrees
                     transformOrigin = TransformOrigin(0.5f, transformOriginY)
+                    alpha = if (state.thumbSize > 0f) 1f else 0f
                 },
             content = { thumb(state) }
         )
