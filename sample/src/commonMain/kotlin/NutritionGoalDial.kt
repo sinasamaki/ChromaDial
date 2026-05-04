@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
+import com.sinasamaki.chroma.dial.DialLayout
+import com.sinasamaki.chroma.dial.RadiusMode
 
 @Composable
 fun NutritionGoalDial() {
@@ -74,6 +76,10 @@ fun NutritionGoalDial() {
                 modifier = Modifier.size(300.dp, 150.dp),
                 startDegrees = 270f,
                 sweepDegrees = 180f,
+                layout = DialLayout(
+                    radiusMode = RadiusMode.WIDTH,
+                    center = Offset(.5f, 1f)
+                ),
                 thumb = {
                     Box(
                         Modifier
@@ -157,6 +163,10 @@ fun NutritionGoalDial() {
                 modifier = Modifier.size(240.dp, 120.dp),
                 startDegrees = 270f,
                 sweepDegrees = 180f,
+                layout = DialLayout(
+                    radiusMode = RadiusMode.WIDTH,
+                    center = Offset(.5f, 1f)
+                ),
                 thumb = {
                     Box(
                         Modifier
@@ -240,6 +250,10 @@ fun NutritionGoalDial() {
                 modifier = Modifier.size(180.dp, 90.dp),
                 startDegrees = 270f,
                 sweepDegrees = 180f,
+                layout = DialLayout(
+                    radiusMode = RadiusMode.WIDTH,
+                    center = Offset(.5f, 1f)
+                ),
                 thumb = {
                     Box(
                         Modifier
