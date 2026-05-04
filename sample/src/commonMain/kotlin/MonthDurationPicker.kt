@@ -1,6 +1,8 @@
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
@@ -20,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,18 +33,13 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.innerShadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -51,20 +49,29 @@ import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.TubeShape
 import com.sinasamaki.chroma.dial.drawEveryInterval
-import com.sinasamaki.chroma.dial.drawTubePath
 import kotlin.math.roundToInt
+
+@ReadOnlyComposable
+@Composable
+infix fun Color.or(light: Color) =
+    if (true) this else light
 
 @Composable
 fun MonthDurationPicker() {
+    val background = Zinc800 or Zinc200
+    val track = Zinc900 or Zinc300
+    val trackEdge = Neutral950 or Neutral400
+    val textColor = Neutral300 or Neutral950
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(400.dp)
-            .background(Zinc200, RoundedCornerShape(16.dp)),
+            .background(background, RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center,
     ) {
 
-        val swatch = Red
+        val swatch = Sky
         var degree by remember { mutableStateOf(90f) }
         val animatedDegree by animateFloatAsState(targetValue = degree)
         Dial(
@@ -75,11 +82,16 @@ fun MonthDurationPicker() {
             interval = 30f,
             modifier = Modifier.size(280.dp),
             valueRange = 1f..12f,
+            overshootDecay = .8f,
+            overshootAnimationSpec = spring(
+                stiffness = Spring.StiffnessLow,
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+            ),
             thumb = {
                 Box(
                     Modifier
                         .size(56.dp)
-                        .padding(6.dp)
+                        .padding(8.dp)
                         .graphicsLayer {
                             rotationZ = -it.absoluteDegree
                         }
@@ -90,16 +102,16 @@ fun MonthDurationPicker() {
                             alpha = .4f
                         }
                         .border(
-                            width = 3.dp,
+                            width = 2.dp,
                             shape = CircleShape,
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Zinc50,
-                                    Zinc400,
+                                    swatch.v200.copy(alpha = .3f),
+                                    track.copy(alpha = .8f),
                                 )
                             )
                         )
-                        .background(Zinc200, CircleShape)
+                        .background(background, CircleShape)
                 )
             },
             track = { dialState ->
@@ -115,23 +127,23 @@ fun MonthDurationPicker() {
                             }
                             .background(
                                 shape = CircleShape,
-                                color = Zinc100
+                                color = track
                             )
                             .drawBehind {
                                 val ringStroke = 56.dp.toPx()
                                 val ringRadius = center.x - (ringStroke / 2)
 
-                                drawCircle(
-                                    color = Zinc300,
-                                    radius = ringRadius,
-                                    style = Stroke(width = ringStroke),
-                                )
+//                                drawCircle(
+//                                    color = Zinc300,
+//                                    radius = ringRadius,
+//                                    style = Stroke(width = ringStroke),
+//                                )
 
                                 drawEveryInterval(
                                     startDegrees = 0f,
                                     sweepDegrees = 330f,
                                     radius = ringRadius,
-                                    spacing = 30f,
+                                    interval = 30f,
                                 ) { data ->
                                     drawCircle(
                                         color = Neutral500,
@@ -150,122 +162,90 @@ fun MonthDurationPicker() {
                         bottomEnd = tubeRadius,
                     )
 
+                    val activeShape = remember(dialState.degree, dialState.overshootDegrees) {
+                        TubeShape(
+                            startAngleDegrees = 0f,
+                            sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
+                            tubeRadius = tubeRadius,
+                            cornerRadius = tubeCornerRadius,
+                        )
+                    }
+
+                    val donutShape = remember {
+                        TubeShape(
+                            startAngleDegrees = 0f,
+                            sweepAngleDegrees = 360f,
+                            tubeRadius = tubeRadius,
+                            cornerRadius = tubeCornerRadius,
+                        )
+                    }
+
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(
-                                TubeShape(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 360f,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                )
-                            )
+                            .clip(donutShape)
                             .blur(
-                                radius = 5.dp,
+                                radius = 8.dp,
                                 edgeTreatment = BlurredEdgeTreatment.Unbounded,
                             )
-                            .drawBehind {
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 360f,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    color = Neutral400,
-                                    style = Stroke(width = 5.dp.toPx()),
-                                )
-                            },
+                            .border(
+                                width = 4.dp,
+                                shape = donutShape,
+                                color = trackEdge
+                            ),
                     )
 
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(
-                                TubeShape(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 360f,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                )
-                            )
+                            .rotate(5f)
+                            .clip(donutShape)
                             .blur(
-                                radius = 30.dp,
+                                radius = 40.dp,
                                 edgeTreatment = BlurredEdgeTreatment.Unbounded,
                             )
-                            .drawBehind {
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    color = swatch.v500,
-                                )
-                            },
+                            .background(
+                                color = swatch.v500,
+                                shape = activeShape,
+                            ),
                     )
 
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .drawBehind {
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    color = swatch.v500,
-                                )
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    brush = Brush.radialGradient(
-                                        .7f to (swatch + 1).v600,
-                                        1f to Transparent,
-                                    ),
-                                )
-                            },
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(
-                                TubeShape(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                )
+                            .background(
+                                color = swatch.v500,
+                                shape = activeShape,
                             )
+                            .background(
+                                brush = Brush.radialGradient(
+                                    .7f to (swatch + 1).v600,
+                                    1f to Transparent,
+                                ),
+                                shape = activeShape,
+                            )
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(activeShape)
                             .blur(
                                 radius = 20.dp,
                                 edgeTreatment = BlurredEdgeTreatment.Unbounded,
                             )
-                            .drawBehind {
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    color = swatch.v300.copy(alpha = .2f),
-                                )
-                            },
+                            .background(
+                                color = swatch.v300.copy(alpha = .2f),
+                                shape = activeShape,
+                            )
                     )
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(
-                                TubeShape(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                )
-                            )
+                            .clip(activeShape)
                             .blur(
                                 radius = 4.dp,
                                 edgeTreatment = BlurredEdgeTreatment.Unbounded,
@@ -274,21 +254,16 @@ fun MonthDurationPicker() {
                                 x = (-3).dp,
                                 y = (-3).dp,
                             )
-                            .drawBehind {
-                                drawTubePath(
-                                    startAngleDegrees = 0f,
-                                    sweepAngleDegrees = 30f + dialState.degree + dialState.overshootDegrees,
-                                    tubeRadius = tubeRadius,
-                                    cornerRadius = tubeCornerRadius,
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Transparent,
-                                            Zinc100,
-                                        )
-                                    ),
-                                    style = Stroke(width = 5f),
-                                )
-                            },
+                            .border(
+                                width = 2.dp,
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Transparent,
+                                        Zinc100,
+                                    )
+                                ),
+                                shape = activeShape,
+                            )
                     )
 
 
@@ -298,7 +273,7 @@ fun MonthDurationPicker() {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(56.dp)
-                            .background(color = Zinc200, shape = CircleShape)
+                            .background(color = background, shape = CircleShape)
                             .innerShadow(shape = CircleShape) {
                                 radius = 6f
                                 offset = Offset(0f, -6f)
@@ -332,7 +307,7 @@ fun MonthDurationPicker() {
                                 text = "$it",
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center,
-                                color = Neutral950,
+                                color = textColor,
                                 fontSize = 72.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
@@ -340,7 +315,7 @@ fun MonthDurationPicker() {
                         }
                         Text(
                             text = if (monthIndex == 1) "month" else "months",
-                            color = Zinc600,
+                            color = textColor.copy(alpha = .5f),
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                         )

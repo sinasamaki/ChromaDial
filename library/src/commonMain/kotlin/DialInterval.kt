@@ -13,12 +13,12 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.abs
 
 /**
- * Places composable content at regular [spacing]-degree intervals along the dial arc,
+ * Places composable content at regular [interval]-degree intervals along the dial arc,
  * using [state] to derive geometry.
  *
  * @param state The dial state to derive arc geometry from.
  * @param modifier Modifier for the container.
- * @param spacing Degree spacing between adjacent interval positions.
+ * @param interval Degree spacing between adjacent interval positions.
  * @param currentDegree Current degree in the 0..sweepDegrees space for determining
  *   [IntervalData.inActiveRange].
  * @param onIntervalContent Composable content for each interval.
@@ -27,31 +27,33 @@ import kotlin.math.abs
 public fun DialInterval(
     state: DialState,
     modifier: Modifier = Modifier,
-    spacing: Float,
+    interval: Float,
     currentDegree: Float? = null,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
     val overshoot = state.overshootDegrees
     val sweepDegrees = state.degreeRange.endInclusive - state.degreeRange.start
+    val direction = if (state.clockwise) 1f else -1f
+    val startAdjust = if (state.clockwise) minOf(0f, overshoot) else maxOf(0f, overshoot)
     DialIntervalImpl(
         modifier = modifier,
-        startDegrees = state.startDegrees + minOf(0f, overshoot),
-        sweepDegrees = sweepDegrees + abs(overshoot),
+        startDegrees = state.startDegrees + startAdjust,
+        sweepDegrees = direction * (sweepDegrees + abs(overshoot)),
         radius = state.radius,
-        spacing = spacing,
+        interval = interval,
         currentDegree = currentDegree,
         onIntervalContent = onIntervalContent,
     )
 }
 
 /**
- * Places composable content at regular [spacing]-degree intervals along an arc.
+ * Places composable content at regular [interval]-degree intervals along an arc.
  *
  * @param modifier Modifier for the container.
  * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
  * @param sweepDegrees Total arc sweep in degrees.
  * @param radius Arc radius in pixels, or null to use the layout width.
- * @param spacing Degree spacing between adjacent interval positions.
+ * @param interval Degree spacing between adjacent interval positions.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
  * @param onIntervalContent Composable content for each interval.
@@ -62,7 +64,7 @@ public fun DialInterval(
     startDegrees: Float = 0f,
     sweepDegrees: Float,
     radius: Float? = null,
-    spacing: Float,
+    interval: Float,
     currentDegree: Float? = null,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
@@ -71,7 +73,7 @@ public fun DialInterval(
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
         radius = radius,
-        spacing = spacing,
+        interval = interval,
         currentDegree = currentDegree,
         onIntervalContent = onIntervalContent,
     )
@@ -83,7 +85,7 @@ private fun DialIntervalImpl(
     startDegrees: Float,
     sweepDegrees: Float,
     radius: Float? = null,
-    spacing: Float,
+    interval: Float,
     currentDegree: Float?,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
@@ -92,13 +94,13 @@ private fun DialIntervalImpl(
         val layoutWidth = constraints.maxWidth.toFloat()
         val radiusPx = radius ?: (layoutWidth / 2f)
 
-        val items = remember(startDegrees, sweepDegrees, radiusPx, spacing, currentDegree) {
+        val items = remember(startDegrees, sweepDegrees, radiusPx, interval, currentDegree) {
             buildIntervalData(
                 startDegrees = startDegrees,
                 sweepDegrees = sweepDegrees,
                 center = Offset(radiusPx, radiusPx),
                 radius = radiusPx,
-                spacing = spacing,
+                interval = interval,
                 currentDegree = currentDegree,
             )
         }

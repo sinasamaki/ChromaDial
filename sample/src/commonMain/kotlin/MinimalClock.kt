@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,7 +102,7 @@ fun MinimalClock() {
                                 shape = CircleShape,
                             ),
                         sweepDegrees = 360f,
-                        spacing = 30f,
+                        interval = 30f,
                     ) { data ->
                         val showNumber by remember {
                             derivedStateOf {
@@ -195,7 +194,7 @@ fun MinimalClock() {
                                 shape = CircleShape,
                             ),
                         sweepDegrees = 360f,
-                        spacing = 30f,
+                        interval = 30f,
                     ) { data ->
                         if (data.index != 0)
                             Text(
