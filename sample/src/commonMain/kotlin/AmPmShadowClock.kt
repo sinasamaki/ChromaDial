@@ -181,7 +181,7 @@ fun AmPmShadowClock() {
             modifier = Modifier
                 .size(250.dp),
             sweepDegrees = 360f,
-            spacing = 30f,
+            interval = 30f,
         ) { data ->
             if (data.index != 0)
                 Text(

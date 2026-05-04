@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sinasamaki.chroma.dial.Dial
-import com.sinasamaki.chroma.dial.RadiusMode
 import com.sinasamaki.chroma.dial.drawEveryInterval
 import kotlin.math.abs
 
@@ -89,7 +88,7 @@ fun ProgressGaugeDial() {
                                 startDegrees = it.startDegrees + minOf(0f, overshoot),
                                 sweepDegrees = (it.degreeRange.endInclusive - it.degreeRange.start) + abs(overshoot),
                                 radius = it.radius - 16.dp.toPx(),
-                                spacing = 180f / 51f,
+                                interval = 180f / 51f,
                                 currentDegree = it.degree + maxOf(0f, overshoot),
                                 center = Offset(center.x, size.height),
                             ) { data ->

@@ -146,19 +146,19 @@ fun TimerDial() {
                                     )
                                 ),
                                 startAngle = 0f,
-                                sweepAngle = (it.degree % 360f),
+                                sweepAngle = -(it.degree % 360f),
                                 radius = it.radius - width / 2,
                                 strokeWidth = width.toDp(),
                                 strokeCap = StrokeCap.Butt
                             )
                             rotate(
-                                degrees = (it.degree + it.overshootDegrees)
+                                degrees = (-it.degree + it.overshootDegrees)
                             ) {
                                 // interval = 30° for 13 positions around full circle (same as steps=11)
                                 drawEveryInterval(
                                     sweepDegrees = 360f,
                                     radius = it.radius - 25.dp.toPx(),
-                                    spacing = 30f,
+                                    interval = 30f,
                                 ) { data ->
                                     rotate(
                                         degrees = data.rotationAngle,
@@ -177,7 +177,7 @@ fun TimerDial() {
                                 drawEveryInterval(
                                     sweepDegrees = 360f,
                                     radius = it.radius - 25.dp.toPx(),
-                                    spacing = 6f,
+                                    interval = 6f,
                                 ) { data ->
                                     rotate(
                                         degrees = data.rotationAngle,
@@ -241,12 +241,12 @@ fun TimerDial() {
                 DialInterval(
                     modifier = Modifier
                         .graphicsLayer {
-                            rotationZ = it.degree
+                            rotationZ = -it.degree
                         }
                         .fillMaxSize(),
                     sweepDegrees = 360f,
                     radius = it.radius,
-                    spacing = 30f,
+                    interval = 30f,
                 ) { data ->
                     if (data.index < 12) {
                         Text(

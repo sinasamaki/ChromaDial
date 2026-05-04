@@ -79,7 +79,7 @@ fun CameraModeDial() {
                             drawEveryInterval(
                                 startDegrees = -180f,
                                 sweepDegrees = 180f,
-                                spacing = 4f,
+                                interval = 4f,
                                 radius = it.radius,
                             ) { data ->
                                 rotate(
@@ -107,7 +107,7 @@ fun CameraModeDial() {
                         .padding(20.dp),
                     startDegrees = -220f,
                     sweepDegrees = 220f,
-                    spacing = 20f,  // 220 / 11 = 20° to get 12 positions (same as steps=10)
+                    interval = 20f,  // 220 / 11 = 20° to get 12 positions (same as steps=10)
                 ) { data ->
                     Box(
                         modifier = Modifier

@@ -36,7 +36,7 @@ public data class IntervalData(
  * @param sweepDegrees Total arc sweep in degrees
  * @param center Center of the arc in pixels
  * @param radius Arc radius in pixels
- * @param spacing Degree spacing between adjacent interval points
+ * @param interval Degree spacing between adjacent interval points
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for computing
  *   [IntervalData.inActiveRange]; null means all intervals are inactive
  */
@@ -45,9 +45,10 @@ internal fun buildIntervalData(
     sweepDegrees: Float,
     center: Offset,
     radius: Float,
-    spacing: Float,
+    interval: Float,
     currentDegree: Float? = null,
 ): List<IntervalData> {
+    val absSweep = abs(sweepDegrees)
     val path = Path().apply {
         addArc(
             oval = Rect(
@@ -62,17 +63,17 @@ internal fun buildIntervalData(
         setPath(path, false)
     }
 
-    val totalIntervals = if (spacing > 0f) (sweepDegrees / spacing).toInt() + 1 else 1
+    val totalIntervals = if (interval > 0f) (absSweep / interval).toInt() + 1 else 1
 
     val result = mutableListOf<IntervalData>()
     for (i in 0 until totalIntervals) {
-        val intervalDegree = if (spacing > 0f) {
-            (i * spacing).coerceAtMost(sweepDegrees)
+        val intervalDegree = if (interval > 0f) {
+            (i * interval).coerceAtMost(absSweep)
         } else {
             0f
         }
 
-        val progress = if (sweepDegrees > 0) intervalDegree / sweepDegrees else 0f
+        val progress = if (absSweep > 0) intervalDegree / absSweep else 0f
 
         val distance = progress * measure.length
         val pos = measure.getPosition(distance)
@@ -100,29 +101,31 @@ internal fun buildIntervalData(
 }
 
 /**
- * Draws content at regular [spacing]-degree intervals along the [dialState]'s arc.
+ * Draws content at regular [interval]-degree intervals along the [dialState]'s arc.
  *
  * @param dialState The dial state to derive arc geometry from.
- * @param spacing Degree spacing between adjacent draw positions. Note: this controls the visual
+ * @param interval Degree spacing between adjacent draw positions. Note: this controls the visual
  *   drawing cadence and is independent of the dial's snap interval ([DialState.interval]).
  * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
  * @param onDraw Called for each interval with its [IntervalData].
  */
 public fun DrawScope.drawEveryInterval(
     dialState: DialState,
-    spacing: Float,
+    interval: Float,
     center: Offset = this.center,
     onDraw: DrawScope.(IntervalData) -> Unit,
 ) {
     val overshoot = dialState.overshootDegrees
     val sweepDegrees = dialState.degreeRange.endInclusive - dialState.degreeRange.start
+    val direction = if (dialState.clockwise) 1f else -1f
+    val startAdjust = if (dialState.clockwise) minOf(0f, overshoot) else maxOf(0f, overshoot)
     val items = buildIntervalData(
-        startDegrees = dialState.startDegrees + minOf(0f, overshoot),
-        sweepDegrees = sweepDegrees + abs(overshoot),
+        startDegrees = dialState.startDegrees + startAdjust,
+        sweepDegrees = direction * (sweepDegrees + abs(overshoot)),
         center = center,
         radius = dialState.radius,
-        spacing = spacing,
-        currentDegree = dialState.degree + maxOf(0f, overshoot),
+        interval = interval,
+        currentDegree = dialState.degree + maxOf(0f, direction * overshoot),
     )
     for (item in items) {
         onDraw(item)
@@ -130,12 +133,12 @@ public fun DrawScope.drawEveryInterval(
 }
 
 /**
- * Draws content at regular [spacing]-degree intervals along an arc.
+ * Draws content at regular [interval]-degree intervals along an arc.
  *
  * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
  * @param sweepDegrees Total arc sweep in degrees.
  * @param radius Arc radius in pixels.
- * @param spacing Degree spacing between adjacent draw positions.
+ * @param interval Degree spacing between adjacent draw positions.
  * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
@@ -145,7 +148,7 @@ public fun DrawScope.drawEveryInterval(
     startDegrees: Float = 0f,
     sweepDegrees: Float,
     radius: Float,
-    spacing: Float,
+    interval: Float,
     center: Offset = this.center,
     currentDegree: Float? = null,
     onDraw: DrawScope.(IntervalData) -> Unit,
@@ -155,7 +158,7 @@ public fun DrawScope.drawEveryInterval(
         sweepDegrees = sweepDegrees,
         center = center,
         radius = radius,
-        spacing = spacing,
+        interval = interval,
         currentDegree = currentDegree,
     )
     for (item in items) {

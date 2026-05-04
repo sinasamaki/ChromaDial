@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,7 +95,7 @@ fun WatchFaceDial() {
                                     startDegrees = 0f,
                                     sweepDegrees = 359f,
                                     radius = tickOuterRadius,
-                                    spacing = 3f,
+                                    interval = 3f,
                                 ) { data ->
                                     val isHourMark = data.intervalDegree % 30f == 0f
                                     val tickLength = if (isHourMark) 100.dp.toPx() else 6.dp.toPx()

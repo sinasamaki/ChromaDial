@@ -206,7 +206,7 @@ private fun RecordingDialTrack(state: DialState) {
                     drawEveryInterval(
                         sweepDegrees = 360f,
                         radius = state.radius - 10.dp.toPx(),
-                        spacing = 5f,
+                        interval = 5f,
                     ) { interval ->
                         translate(
                             left = interval.position.x,
@@ -230,7 +230,7 @@ private fun RecordingDialTrack(state: DialState) {
                     drawEveryInterval(
                         sweepDegrees = 360f,
                         radius = state.radius - 25.dp.toPx(),
-                        spacing = 10f,
+                        interval = 10f,
                     ) { interval ->
                         translate(
                             left = interval.position.x,

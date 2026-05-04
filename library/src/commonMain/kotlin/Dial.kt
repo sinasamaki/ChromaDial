@@ -35,7 +35,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -95,12 +94,37 @@ public enum class RadiusMode {
     HEIGHT
 }
 
+/**
+ * Controls how the dial's radius and center are derived from available layout space.
+ *
+ * @param radiusMode Which dimension (width or height) the radius is based on.
+ * @param radiusFraction Fraction of the chosen dimension to use as radius. Default is 0.5 (half).
+ * @param center Center of the dial as a fraction of (width, height). Default is Offset(0.5, 0.5).
+ */
+public data class DialLayout(
+    val radiusMode: RadiusMode = RadiusMode.WIDTH,
+    val radiusFraction: Float = 0.5f,
+    val center: Offset = Offset(0.5f, 0.5f),
+) {
+    public companion object {
+        public fun width(
+            fraction: Float = 0.5f,
+            center: Offset = Offset(0.5f, 0.5f),
+        ): DialLayout = DialLayout(RadiusMode.WIDTH, fraction, center)
+
+        public fun height(
+            fraction: Float = 0.5f,
+            center: Offset = Offset(0.5f, 0.5f),
+        ): DialLayout = DialLayout(RadiusMode.HEIGHT, fraction, center)
+    }
+}
+
 @Stable
 public class DialState(
     initialDegree: Float,
     degreeRange: ClosedFloatingPointRange<Float>,
     public val interval: Float = 0f,
-    public val radiusMode: RadiusMode = RadiusMode.WIDTH,
+    public val layout: DialLayout = DialLayout(),
     public var onDegreeChangeFinished: (() -> Unit)? = null,
     startDegrees: Float = 0f,
     public val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
@@ -109,6 +133,7 @@ public class DialState(
     private var degreeState by mutableFloatStateOf(initialDegree)
     private val _degreeAnimatable = Animatable(initialDegree)
     private var radiusState by mutableFloatStateOf(0f)
+    private var centerState by mutableStateOf(Offset.Zero)
     private var thumbSizeState by mutableFloatStateOf(0f)
     internal val overshootAnimatable = Animatable(0f)
 
@@ -148,6 +173,13 @@ public class DialState(
         }
         get() = radiusState
 
+    /** Dial center in pixels. Set by the [Dial] composable based on constraints and [layout]. */
+    public var center: Offset
+        internal set(value) {
+            centerState = value
+        }
+        get() = centerState
+
     public var thumbSize: Float
         internal set(value) {
             thumbSizeState = value
@@ -175,7 +207,7 @@ public class DialState(
         set(newVal) {
             degreeState = newVal
         }
-        get() = if (clockwise) degreeState else -degreeState
+        get() = degreeState
 
     /** Normalized 0–1 value based on position within [degreeRange]. */
     public val value: Float
@@ -235,7 +267,7 @@ public class DialState(
  * @param interval Snap interval in degrees. 0 means continuous rotation.
  * @param steps Number of snap steps. When > 0, overrides [interval] by computing
  *   `sweepDegrees / steps`.
- * @param radiusMode Whether to derive radius from WIDTH or HEIGHT.
+ * @param layout Controls radius calculation and dial center position. See [DialLayout].
  * @param valueRange The range that [DialState.mappedValue] maps to.
  * @param clockwise When false, rotation is counterclockwise.
  * @param onDegreeChangeFinished Called when the user finishes dragging.
@@ -247,18 +279,18 @@ public fun rememberDialState(
     startDegrees: Float = 0f,
     interval: Float = 0f,
     steps: Int = 0,
-    radiusMode: RadiusMode = RadiusMode.WIDTH,
+    layout: DialLayout = DialLayout(),
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     clockwise: Boolean = true,
     onDegreeChangeFinished: (() -> Unit)? = null,
 ): DialState {
     val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    return remember(effectiveInterval, radiusMode, valueRange, clockwise) {
+    return remember(effectiveInterval, layout, valueRange, clockwise) {
         DialState(
             initialDegree = initialDegree,
             degreeRange = 0f..sweepDegrees,
             interval = effectiveInterval,
-            radiusMode = radiusMode,
+            layout = layout,
             onDegreeChangeFinished = onDegreeChangeFinished,
             startDegrees = startDegrees,
             valueRange = valueRange,
@@ -285,7 +317,7 @@ public fun Dial(
     modifier: Modifier = Modifier,
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
-    radiusMode: RadiusMode = RadiusMode.WIDTH,
+    layout: DialLayout = DialLayout(),
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
@@ -303,7 +335,7 @@ public fun Dial(
         modifier = modifier,
         startDegrees = startDegrees,
         sweepDegrees = sweepDegrees,
-        radiusMode = radiusMode,
+        layout = layout,
         onDegreeChangeFinished = onDegreeChangeFinished,
         interactionSource = interactionSource,
         interval = interval,
@@ -328,7 +360,7 @@ public fun Dial(
     modifier: Modifier = Modifier,
     startDegrees: Float = 0f,
     sweepDegrees: Float = 360f,
-    radiusMode: RadiusMode = RadiusMode.WIDTH,
+    layout: DialLayout = DialLayout(),
     onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Float = 0f,
@@ -342,12 +374,12 @@ public fun Dial(
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
     val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    val state = remember(effectiveInterval, radiusMode, valueRange, clockwise) {
+    val state = remember(effectiveInterval, layout, valueRange, clockwise) {
         DialState(
             initialDegree = degree,
             degreeRange = 0f..sweepDegrees,
             interval = effectiveInterval,
-            radiusMode = radiusMode,
+            layout = layout,
             onDegreeChangeFinished = onDegreeChangeFinished,
             startDegrees = startDegrees,
             valueRange = valueRange,
@@ -455,12 +487,19 @@ private fun DialImpl(
             }
         }
 
-        state.radius = when (state.radiusMode) {
-            RadiusMode.WIDTH -> dialSize.width / 2f
-            RadiusMode.HEIGHT -> dialSize.height / 2f
+        state.radius = state.layout.radiusFraction * when (state.layout.radiusMode) {
+            RadiusMode.WIDTH -> dialSize.width
+            RadiusMode.HEIGHT -> dialSize.height
         }
+        state.center = Offset(
+            dialSize.width * state.layout.center.x,
+            dialSize.height * state.layout.center.y,
+        )
 
-        val transformOriginY = if (state.thumbSize > 0f) state.radius / state.thumbSize else 0f
+        val transformOriginX = if (state.thumbSize > 0f)
+            (state.center.x - dialSize.width / 2f + state.thumbSize / 2f) / state.thumbSize
+        else 0.5f
+        val transformOriginY = if (state.thumbSize > 0f) state.center.y / state.thumbSize else 0f
 
         var thumbPosition by remember { mutableStateOf(Offset.Zero) }
         var draggingAngle by remember { mutableStateOf(state.degree.coerceIn(state.degreeRange)) }
@@ -478,7 +517,7 @@ private fun DialImpl(
                 }
                 .graphicsLayer {
                     rotationZ = state.absoluteDegree + state.overshootDegrees
-                    transformOrigin = TransformOrigin(0.5f, transformOriginY)
+                    transformOrigin = TransformOrigin(transformOriginX, transformOriginY)
                     alpha = if (state.thumbSize > 0f) 1f else 0f
                 },
             content = { thumb(state) }
@@ -488,21 +527,19 @@ private fun DialImpl(
             Box(
                 modifier = Modifier
                     .size(with(density) { state.thumbSize.toDp() })
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopStart)
                     .graphicsLayer {
                         val angleInRadians = (state.absoluteDegree - 90f) * PI.toFloat() / 180f
                         val thumbRadius = state.radius - state.thumbSize / 2f
 
-                        val centerX = state.radius
-                        val centerY = state.radius
+                        val centerX = state.center.x
+                        val centerY = state.center.y
 
                         val targetX = centerX + thumbRadius * kotlin.math.cos(angleInRadians)
                         val targetY = centerY + thumbRadius * kotlin.math.sin(angleInRadians)
 
-                        val currentX = state.radius
-
-                        translationX = targetX - currentX
-                        translationY = targetY - (state.thumbSize / 2)
+                        translationX = targetX - state.thumbSize / 2f
+                        translationY = targetY - state.thumbSize / 2f
                     }
                     .onGloballyPositioned {
                         thumbPosition = it.positionInParent()
@@ -511,7 +548,7 @@ private fun DialImpl(
                         if (state.enabled) {
                             Modifier
                                 .pointerInput(state.degreeRange) {
-                                    val centerPx = Offset(state.radius, state.radius)
+                                    val centerPx = state.center
 
                                     fun calculateAngle(offset: Offset): Float {
                                         val dx = offset.x - centerPx.x
@@ -701,7 +738,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                     drawArc(
                                         color = colors.inactiveTrackColor.copy(alpha = alpha),
                                         startAngle = state.startDegrees,
-                                        sweepAngle = ringMaxSweep,
+                                        sweepAngle = if (state.clockwise) ringMaxSweep else -ringMaxSweep,
                                         radius = arcCenterRadius,
                                         strokeWidth = effectiveStrokeWidth,
                                         strokeCap = StrokeCap.Round,
@@ -709,9 +746,16 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                 }
 
                                 val overshoot = if (isInnermostRing) state.overshootDegrees else 0f
-                                val effectiveActiveStart = state.startDegrees + minOf(0f, overshoot)
-                                val effectiveActiveSweep = ringSweep + abs(overshoot)
-                                if (effectiveActiveSweep > 0f && strokeMultiplier > 0f) {
+                                val effectiveActiveStart: Float
+                                val effectiveActiveSweep: Float
+                                if (state.clockwise) {
+                                    effectiveActiveStart = state.startDegrees + minOf(0f, overshoot)
+                                    effectiveActiveSweep = ringSweep + abs(overshoot)
+                                } else {
+                                    effectiveActiveStart = state.startDegrees
+                                    effectiveActiveSweep = -ringSweep + overshoot
+                                }
+                                if (abs(effectiveActiveSweep) > 0f && strokeMultiplier > 0f) {
                                     drawArc(
                                         color = colors.activeTrackColor.copy(alpha = alpha),
                                         startAngle = effectiveActiveStart,
@@ -727,9 +771,9 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
 
                                     drawEveryInterval(
                                         startDegrees = state.startDegrees,
-                                        sweepDegrees = ringMaxSweep,
+                                        sweepDegrees = if (state.clockwise) ringMaxSweep else -ringMaxSweep,
                                         radius = arcCenterRadius,
-                                        spacing = state.interval,
+                                        interval = state.interval,
                                         currentDegree = currentDegreeForTicks,
                                     ) { data ->
                                         val tickColor = if (data.inActiveRange && isActiveRing) {
