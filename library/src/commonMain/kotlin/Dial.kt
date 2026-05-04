@@ -5,6 +5,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -496,11 +497,6 @@ private fun DialImpl(
             dialSize.height * state.layout.center.y,
         )
 
-        val transformOriginX = if (state.thumbSize > 0f)
-            (state.center.x - dialSize.width / 2f + state.thumbSize / 2f) / state.thumbSize
-        else 0.5f
-        val transformOriginY = if (state.thumbSize > 0f) state.center.y / state.thumbSize else 0f
-
         var thumbPosition by remember { mutableStateOf(Offset.Zero) }
         var draggingAngle by remember { mutableStateOf(state.degree.coerceIn(state.degreeRange)) }
         var currentDragInteraction by remember { mutableStateOf<DragInteraction.Start?>(null) }
@@ -511,13 +507,20 @@ private fun DialImpl(
 
         Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
+                .align(Alignment.TopStart)
                 .onGloballyPositioned { coordinates ->
                     state.thumbSize = coordinates.size.width.toFloat()
                 }
                 .graphicsLayer {
-                    rotationZ = state.absoluteDegree + state.overshootDegrees
-                    transformOrigin = TransformOrigin(transformOriginX, transformOriginY)
+                    val angle = state.absoluteDegree + state.overshootDegrees
+                    val angleInRadians = (angle - 90f) * PI.toFloat() / 180f
+                    val thumbRadius = state.radius - state.thumbSize / 2f
+                    val targetX = state.center.x + thumbRadius * kotlin.math.cos(angleInRadians)
+                    val targetY = state.center.y + thumbRadius * kotlin.math.sin(angleInRadians)
+                    translationX = targetX - state.thumbSize / 2f
+                    translationY = targetY - state.thumbSize / 2f
+                    rotationZ = angle
+                    transformOrigin = TransformOrigin(0.5f, 0.5f)
                     alpha = if (state.thumbSize > 0f) 1f else 0f
                 },
             content = { thumb(state) }
