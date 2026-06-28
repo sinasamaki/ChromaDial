@@ -26,14 +26,20 @@ export default defineConfig({
 					label: 'Components',
 					items: [
 						{ label: 'Dial Basics', slug: 'components/dial-basics' },
-						{ label: 'Customization', slug: 'components/customization' },
+						{ label: 'Default Dial Colors', slug: 'components/dial-colors' },
+						{ label: 'Custom Thumb & Track', slug: 'components/customization' },
+						{ label: 'State-based API', slug: 'components/state-based-api' },
+						{ label: 'Common Patterns', slug: 'components/common-patterns' },
+						{ label: 'Overshoot', slug: 'components/overshoot' },
+						{ label: 'Responding to Input', slug: 'components/responding-to-input' },
 					],
 				},
 				{
 					label: 'API Reference',
 					items: [
-						{ label: 'DialColors', slug: 'reference/dial-colors' },
 						{ label: 'DialState', slug: 'reference/dial-state' },
+						{ label: 'DialColors', slug: 'reference/dial-colors' },
+						{ label: 'DialLayout', slug: 'reference/dial-layout' },
 						{ label: 'RadiusMode', slug: 'reference/radius-mode' },
 					],
 				},

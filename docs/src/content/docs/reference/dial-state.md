@@ -10,16 +10,15 @@ description: API reference for the DialState class.
 ```kotlin
 @Stable
 class DialState(
-    initialDegree: Float,
-    val degreeRange: ClosedFloatingPointRange<Float>,
-    val interval: Float = 0f,
-    val radiusMode: RadiusMode = RadiusMode.WIDTH,
-    var onDegreeChangeFinished: (() -> Unit)? = null,
-    val startDegrees: Float = 0f,
-    val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    val clockwise: Boolean = true,
+    initialDegree: Float = 0f,
 )
 ```
+
+`DialState` only holds the dial's position (`degree`). Every other property below (`sweepDegrees`,
+`startDegrees`, `interval`, `layout`, `valueRange`, `clockwise`, `enabled`, …) has a public getter
+but is **set by the `Dial` composable** from its parameters — you don't pass them to the
+constructor. `Dial` applies them onto the state in place on each composition, so changing config
+never recreates the state or resets `degree`.
 
 Use `rememberDialState()` to create and remember a `DialState` in a composable.
 
@@ -27,49 +26,48 @@ Use `rememberDialState()` to create and remember a `DialState` in a composable.
 
 ### initialDegree
 **Type:** `Float`
+**Default:** `0f`
 
-The initial rotation angle in degrees.
+The initial rotation angle in degrees. Once `Dial` applies its config, it is clamped to the sweep.
 
-### degreeRange
-**Type:** `ClosedFloatingPointRange<Float>`
+## Configuration (set by the Dial composable)
 
-The allowed range of rotation. The dial will clamp values to this range. This is always `0f..sweepDegrees`.
+These are readable on the state but configured through the corresponding `Dial` parameters.
+
+### sweepDegrees
+**Type:** `Float` (read-only, set by Dial)
+
+Total arc sweep. `degreeRange` is always `0f..sweepDegrees`.
+
+### startDegrees
+**Type:** `Float` (read-only, set by Dial)
+
+The absolute starting angle for the dial arc in screen coordinates. Used for positioning the thumb and track.
 
 ### interval
-**Type:** `Float`
-**Default:** `0f`
+**Type:** `Float` (read-only, set by Dial)
 
 The degree interval between snap points. When `0f`, rotation is continuous. When set to a value like `15f`, the dial snaps every 15 degrees. The end of the range is always a valid snap point.
 
-### radiusMode
-**Type:** `RadiusMode`
-**Default:** `RadiusMode.WIDTH`
+### layout
+**Type:** `DialLayout` (read-only, set by Dial)
 
-How to calculate the radius from the dial's constraints.
-
-### onDegreeChangeFinished
-**Type:** `(() -> Unit)?`
-**Default:** `null`
-
-Callback invoked when dragging ends.
-
-### startDegrees
-**Type:** `Float`
-**Default:** `0f`
-
-The absolute starting angle for the dial arc in screen coordinates. Used internally for positioning the thumb and track.
+Controls how the radius and center are derived from the dial's constraints.
 
 ### valueRange
-**Type:** `ClosedFloatingPointRange<Float>`
-**Default:** `0f..1f`
+**Type:** `ClosedFloatingPointRange<Float>` (read-only, set by Dial)
 
 The range that `mappedValue` maps to. Use this to get values in a custom domain (e.g., `0f..100f` for percentages).
 
 ### clockwise
-**Type:** `Boolean`
-**Default:** `true`
+**Type:** `Boolean` (read-only, set by Dial)
 
 When `false`, the dial rotates counterclockwise.
+
+### onDegreeChangeFinished
+**Type:** `(() -> Unit)?` (read-only, set by Dial)
+
+Callback invoked when dragging ends.
 
 ## Properties
 
@@ -140,15 +138,15 @@ val isAtEnd = state.degree == state.degreeRange.endInclusive
 
 The degree interval between snap points. When `0f`, the dial rotates continuously.
 
-### radiusMode
-**Type:** `RadiusMode` (read-only)
+### layout
+**Type:** `DialLayout` (read-only, set by Dial)
 
-The radius calculation mode, as specified during construction.
+Controls how the radius and center are derived. Set from the `Dial` composable's `layout` parameter.
 
 ### radius
 **Type:** `Float` (read-only, internally set)
 
-The calculated radius in pixels. Set by the Dial composable based on constraints and `radiusMode`.
+The calculated radius in pixels. Set by the Dial composable based on constraints and `layout`.
 
 ```kotlin
 val arcRadius = state.radius - 12.dp.toPx()
@@ -230,14 +228,16 @@ Returns the nearest snap position for a given degree value. Used internally by t
 ## Callbacks
 
 ### onValueChange
-**Type:** `(Float) -> Unit`
+**Type:** `(Float) -> Unit` (internal)
 
-Internal callback used by the Dial to notify of value changes. Set to the `onDegreeChange` parameter.
+Internal callback wired by the Dial. In the hoisted overloads it writes `degree` directly (and then
+calls your `onDegreeChange`); in the controlled `degree`/`onDegreeChange` overload it forwards to
+`onDegreeChange`. Not part of the public API.
 
 ### onDegreeChangeFinished
-**Type:** `(() -> Unit)?`
+**Type:** `(() -> Unit)?` (set by Dial)
 
-Callback invoked when the user finishes dragging. Can be set via constructor or directly on the property.
+Callback invoked when the user finishes dragging. Set from the `Dial` composable's `onDegreeChangeFinished` parameter.
 
 ## Usage in Custom Composables
 
@@ -289,4 +289,4 @@ track = { state ->
 ## See Also
 
 - [Dial Basics](/components/dial-basics/) - Learn how to use the Dial component
-- [RadiusMode](/reference/radius-mode/) - Understand radius calculation modes
+- [DialLayout](/reference/dial-layout/) - Control radius and center positioning

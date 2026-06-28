@@ -106,13 +106,13 @@ internal fun buildIntervalData(
  * @param dialState The dial state to derive arc geometry from.
  * @param interval Degree spacing between adjacent draw positions. Note: this controls the visual
  *   drawing cadence and is independent of the dial's snap interval ([DialState.interval]).
- * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
+ * @param center Center of the arc in pixels. Defaults to the dial's [DialState.center].
  * @param onDraw Called for each interval with its [IntervalData].
  */
 public fun DrawScope.drawEveryInterval(
     dialState: DialState,
     interval: Float,
-    center: Offset = this.center,
+    center: Offset = dialState.center,
     onDraw: DrawScope.(IntervalData) -> Unit,
 ) {
     val overshoot = dialState.overshootDegrees

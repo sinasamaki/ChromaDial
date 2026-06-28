@@ -805,6 +805,14 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
+                                // Scale rings around the dial's center (which may be off-center
+                                // when a custom DialLayout.center is used) rather than the box center.
+                                if (size.width > 0f && size.height > 0f) {
+                                    transformOrigin = TransformOrigin(
+                                        state.center.x / size.width,
+                                        state.center.y / size.height,
+                                    )
+                                }
                             }
                             .drawBehind {
                                 val effectiveStrokeWidth = trackWidth * strokeMultiplier
@@ -818,6 +826,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         startAngle = state.startDegrees,
                                         sweepAngle = if (state.clockwise) ringMaxSweep else -ringMaxSweep,
                                         radius = arcCenterRadius,
+                                        center = state.center,
                                         strokeWidth = effectiveStrokeWidth,
                                         strokeCap = StrokeCap.Round,
                                     )
@@ -839,6 +848,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         startAngle = effectiveActiveStart,
                                         sweepAngle = effectiveActiveSweep,
                                         radius = arcCenterRadius,
+                                        center = state.center,
                                         strokeWidth = effectiveStrokeWidth,
                                         strokeCap = StrokeCap.Round,
                                     )
@@ -851,6 +861,7 @@ private fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         startDegrees = state.startDegrees,
                                         sweepDegrees = if (state.clockwise) ringMaxSweep else -ringMaxSweep,
                                         radius = arcCenterRadius,
+                                        center = state.center,
                                         interval = state.interval,
                                         currentDegree = currentDegreeForTicks,
                                     ) { data ->
