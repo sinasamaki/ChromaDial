@@ -122,14 +122,7 @@ public data class DialLayout(
 
 @Stable
 public class DialState(
-    initialDegree: Float,
-    degreeRange: ClosedFloatingPointRange<Float>,
-    public val interval: Float = 0f,
-    public val layout: DialLayout = DialLayout(),
-    public var onDegreeChangeFinished: (() -> Unit)? = null,
-    startDegrees: Float = 0f,
-    public val valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    public val clockwise: Boolean = true,
+    initialDegree: Float = 0f,
 ) {
     private var degreeState by mutableFloatStateOf(initialDegree)
     private val _degreeAnimatable = Animatable(initialDegree)
@@ -138,24 +131,59 @@ public class DialState(
     private var thumbSizeState by mutableFloatStateOf(0f)
     internal val overshootAnimatable = Animatable(0f)
 
-    private var _degreeRange by mutableStateOf(degreeRange)
-    private var startDegreesState by mutableFloatStateOf(startDegrees)
+    private var sweepDegreesState by mutableFloatStateOf(360f)
+    private var startDegreesState by mutableFloatStateOf(0f)
+    private var intervalState by mutableFloatStateOf(0f)
+    private var layoutState by mutableStateOf(DialLayout())
+    private var valueRangeState by mutableStateOf<ClosedFloatingPointRange<Float>>(0f..1f)
+    private var clockwiseState by mutableStateOf(true)
+    private var enabledState by mutableStateOf(true)
 
-    init {
-        require(interval >= 0f) { "interval must be >= 0" }
-    }
+    /** Total arc sweep in degrees. Set by the [Dial] composable. */
+    public var sweepDegrees: Float
+        get() = sweepDegreesState
+        internal set(value) { sweepDegreesState = value }
 
-    /** Whether the dial responds to drag input. Set by the [Dial] composable. */
-    public var enabled: Boolean = true
-        internal set
-
+    /** Visual starting position on screen (e.g. 180f for bottom). Set by the [Dial] composable. */
     public var startDegrees: Float
         get() = startDegreesState
         internal set(value) { startDegreesState = value }
 
-    public var degreeRange: ClosedFloatingPointRange<Float>
-        get() = _degreeRange
-        internal set(value) { _degreeRange = value }
+    /** Snap interval in degrees (0 = continuous rotation). Set by the [Dial] composable. */
+    public var interval: Float
+        get() = intervalState
+        internal set(value) {
+            require(value >= 0f) { "interval must be >= 0" }
+            intervalState = value
+        }
+
+    /** Controls radius and center derivation. Set by the [Dial] composable. See [DialLayout]. */
+    public var layout: DialLayout
+        get() = layoutState
+        internal set(value) { layoutState = value }
+
+    /** The range that [mappedValue] maps to. Set by the [Dial] composable. */
+    public var valueRange: ClosedFloatingPointRange<Float>
+        get() = valueRangeState
+        internal set(value) { valueRangeState = value }
+
+    /** Rotation direction. When false, rotation is counterclockwise. Set by the [Dial] composable. */
+    public var clockwise: Boolean
+        get() = clockwiseState
+        internal set(value) { clockwiseState = value }
+
+    /** Whether the dial responds to drag input. Set by the [Dial] composable. */
+    public var enabled: Boolean
+        get() = enabledState
+        internal set(value) { enabledState = value }
+
+    /** Called when the user finishes dragging. Set by the [Dial] composable. */
+    public var onDegreeChangeFinished: (() -> Unit)? = null
+        internal set
+
+    /** Internal allowed rotation range (0f..[sweepDegrees]). */
+    public val degreeRange: ClosedFloatingPointRange<Float>
+        get() = 0f..sweepDegreesState
 
     /**
      * The absolute degree for rendering purposes.
@@ -238,7 +266,38 @@ public class DialState(
             return if (clockwise) value else -value
         }
 
-    public var onValueChange: (Float) -> Unit = {}
+    /** Invoked with the new degree as the dial is dragged. Wired by the [Dial] composable. */
+    internal var onValueChange: (Float) -> Unit = {}
+
+    /**
+     * Applies configuration from the [Dial] composable, mutating this state in place so that
+     * changing config (interval, clockwise, valueRange, …) never recreates the state or resets
+     * [degree]. Called on every composition; assignments to unchanged snapshot fields are no-ops.
+     */
+    internal fun applyConfig(
+        startDegrees: Float,
+        sweepDegrees: Float,
+        interval: Float,
+        layout: DialLayout,
+        valueRange: ClosedFloatingPointRange<Float>,
+        clockwise: Boolean,
+        enabled: Boolean,
+        overshootDecay: Float,
+        overshootAnimationSpec: AnimationSpec<Float>,
+        onDegreeChangeFinished: (() -> Unit)?,
+    ) {
+        this.startDegrees = startDegrees
+        this.sweepDegrees = sweepDegrees
+        this.interval = interval
+        this.layout = layout
+        this.valueRange = valueRange
+        this.clockwise = clockwise
+        this.enabled = enabled
+        this.overshootDecay = overshootDecay
+        this.overshootAnimationSpec = overshootAnimationSpec
+        this.onDegreeChangeFinished = onDegreeChangeFinished
+        if (degree > sweepDegrees) degree = sweepDegrees
+    }
 
     /**
      * Animates [degree] to [targetDegree] using [animationSpec].
@@ -260,50 +319,18 @@ public class DialState(
 }
 
 /**
- * Creates and remembers a [DialState].
+ * Creates and remembers a [DialState] for hoisting the dial's position outside of `thumb`/`track`.
  *
- * @param initialDegree Initial dial position within [0, sweepDegrees].
- * @param sweepDegrees Total arc sweep in degrees.
- * @param startDegrees Visual starting position on screen (e.g. 180f for bottom).
- * @param interval Snap interval in degrees. 0 means continuous rotation.
- * @param steps Number of snap steps. When > 0, overrides [interval] by computing
- *   `sweepDegrees / steps`.
- * @param layout Controls radius calculation and dial center position. See [DialLayout].
- * @param valueRange The range that [DialState.mappedValue] maps to.
- * @param clockwise When false, rotation is counterclockwise.
- * @param onDegreeChangeFinished Called when the user finishes dragging.
+ * Only the initial position lives here; all other configuration (sweep, interval, value range,
+ * direction, …) is passed to the [Dial] composable, which applies it onto this state in place.
+ * That means changing configuration never recreates the state or resets [DialState.degree].
+ *
+ * @param initialDegree Initial dial position. Clamped to the sweep once [Dial] applies its config.
  */
 @Composable
 public fun rememberDialState(
     initialDegree: Float = 0f,
-    sweepDegrees: Float = 360f,
-    startDegrees: Float = 0f,
-    interval: Float = 0f,
-    steps: Int = 0,
-    layout: DialLayout = DialLayout(),
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    clockwise: Boolean = true,
-    onDegreeChangeFinished: (() -> Unit)? = null,
-): DialState {
-    val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    return remember(effectiveInterval, layout, valueRange, clockwise) {
-        DialState(
-            initialDegree = initialDegree,
-            degreeRange = 0f..sweepDegrees,
-            interval = effectiveInterval,
-            layout = layout,
-            onDegreeChangeFinished = onDegreeChangeFinished,
-            startDegrees = startDegrees,
-            valueRange = valueRange,
-            clockwise = clockwise,
-        )
-    }.also {
-        it.onDegreeChangeFinished = onDegreeChangeFinished
-        it.startDegrees = startDegrees
-        it.degreeRange = 0f..sweepDegrees
-        if (it.degree > sweepDegrees) it.degree = sweepDegrees
-    }
-}
+): DialState = remember { DialState(initialDegree) }
 
 // ─── Simple (colors) overloads ───────────────────────────────────────────────
 
@@ -374,35 +401,31 @@ public fun Dial(
     thumb: @Composable (DialState) -> Unit,
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
+    val state = remember { DialState(initialDegree = degree) }
     val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
-    val state = remember(effectiveInterval, layout, valueRange, clockwise) {
-        DialState(
-            initialDegree = degree,
-            degreeRange = 0f..sweepDegrees,
-            interval = effectiveInterval,
-            layout = layout,
-            onDegreeChangeFinished = onDegreeChangeFinished,
-            startDegrees = startDegrees,
-            valueRange = valueRange,
-            clockwise = clockwise,
-        )
-    }
-    state.onDegreeChangeFinished = onDegreeChangeFinished
+    state.applyConfig(
+        startDegrees = startDegrees,
+        sweepDegrees = sweepDegrees,
+        interval = effectiveInterval,
+        layout = layout,
+        valueRange = valueRange,
+        clockwise = clockwise,
+        enabled = enabled,
+        overshootDecay = overshootDecay,
+        overshootAnimationSpec = overshootAnimationSpec,
+        onDegreeChangeFinished = onDegreeChangeFinished,
+    )
+    // Controlled mode: the caller owns `degree`. Drag only reports; the parent drives state.degree.
     state.onValueChange = onDegreeChange
-    state.startDegrees = startDegrees
-    state.degreeRange = 0f..sweepDegrees
     val clampedDegree = degree.coerceIn(state.degreeRange)
     state.degree = clampedDegree
     SideEffect {
-        state.overshootDecay = overshootDecay
-        state.overshootAnimationSpec = overshootAnimationSpec
         if (clampedDegree != degree) onDegreeChange(clampedDegree)
     }
 
-    Dial(
+    DialImpl(
         state = state,
         modifier = modifier,
-        enabled = enabled,
         interactionSource = interactionSource,
         thumb = thumb,
         track = track,
@@ -412,21 +435,44 @@ public fun Dial(
 // ─── State-hoisting overloads ─────────────────────────────────────────────────
 
 /**
- * Dial composable that takes an externally-managed [DialState].
- * Use [rememberDialState] to create and remember a [DialState].
+ * Dial composable that takes an externally-managed [DialState], with color customization.
+ * Use [rememberDialState] to create and remember a [DialState]. The dial owns [DialState.degree]:
+ * drag input writes it directly, so it can be read back anywhere (e.g. `state.mappedValue`).
  */
 @Composable
 public fun Dial(
-    state: DialState,
+    state: DialState = rememberDialState(),
     modifier: Modifier = Modifier,
+    startDegrees: Float = 0f,
+    sweepDegrees: Float = 360f,
+    interval: Float = 0f,
+    steps: Int = 0,
+    layout: DialLayout = DialLayout(),
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    clockwise: Boolean = true,
     enabled: Boolean = true,
+    overshootDecay: Float = 0.5f,
+    overshootAnimationSpec: AnimationSpec<Float> = spring(),
+    onDegreeChange: ((Float) -> Unit)? = null,
+    onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     colors: DialColors = DialColors.default(),
 ) {
     Dial(
         state = state,
         modifier = modifier,
+        startDegrees = startDegrees,
+        sweepDegrees = sweepDegrees,
+        interval = interval,
+        steps = steps,
+        layout = layout,
+        valueRange = valueRange,
+        clockwise = clockwise,
         enabled = enabled,
+        overshootDecay = overshootDecay,
+        overshootAnimationSpec = overshootAnimationSpec,
+        onDegreeChange = onDegreeChange,
+        onDegreeChangeFinished = onDegreeChangeFinished,
         interactionSource = interactionSource,
         thumb = { s -> DefaultDialThumb(s, colors) },
         track = { s -> DefaultDialTrack(s, colors) },
@@ -435,18 +481,47 @@ public fun Dial(
 
 /**
  * Dial composable that takes an externally-managed [DialState] with full customization.
- * Use [rememberDialState] to create and remember a [DialState].
+ * Use [rememberDialState] to create and remember a [DialState]. The dial owns [DialState.degree]:
+ * drag input writes it directly, so it can be read back anywhere (e.g. `state.mappedValue`).
  */
 @Composable
 public fun Dial(
-    state: DialState,
+    state: DialState = rememberDialState(),
     modifier: Modifier = Modifier,
+    startDegrees: Float = 0f,
+    sweepDegrees: Float = 360f,
+    interval: Float = 0f,
+    steps: Int = 0,
+    layout: DialLayout = DialLayout(),
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    clockwise: Boolean = true,
     enabled: Boolean = true,
+    overshootDecay: Float = 0.5f,
+    overshootAnimationSpec: AnimationSpec<Float> = spring(),
+    onDegreeChange: ((Float) -> Unit)? = null,
+    onDegreeChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     thumb: @Composable (DialState) -> Unit,
     track: @UiComposable @Composable (DialState) -> Unit,
 ) {
-    state.enabled = enabled
+    val effectiveInterval = if (steps > 0) sweepDegrees / steps else interval
+    state.applyConfig(
+        startDegrees = startDegrees,
+        sweepDegrees = sweepDegrees,
+        interval = effectiveInterval,
+        layout = layout,
+        valueRange = valueRange,
+        clockwise = clockwise,
+        enabled = enabled,
+        overshootDecay = overshootDecay,
+        overshootAnimationSpec = overshootAnimationSpec,
+        onDegreeChangeFinished = onDegreeChangeFinished,
+    )
+    // Hoisted mode: the state owns `degree`. Drag writes it directly; onDegreeChange just notifies.
+    state.onValueChange = { newDegree ->
+        state.degree = newDegree
+        onDegreeChange?.invoke(newDegree)
+    }
     DialImpl(
         state = state,
         modifier = modifier,
