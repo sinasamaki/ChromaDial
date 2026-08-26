@@ -35,3 +35,20 @@ val Red600 = Color(0xFFE7000B)
 val Emerald400 = Color(0xFF00D492)
 val Teal400 = Color(0xFF00D5BE)
 val Cyan400 = Color(0xFF00D3F2)
+
+// Accent palettes for the color-customization showcase.
+val Blue300 = Color(0xFF8EC5FF)
+val Blue400 = Color(0xFF51A2FF)
+val Blue500 = Color(0xFF2B7FFF)
+
+val Rose300 = Color(0xFFFFA1AD)
+val Rose400 = Color(0xFFFF637E)
+val Rose500 = Color(0xFFFF2056)
+
+val Amber300 = Color(0xFFFFD230)
+val Amber400 = Color(0xFFFFB900)
+val Amber500 = Color(0xFFFE9A00)
+
+val Violet300 = Color(0xFFC4B4FF)
+val Violet400 = Color(0xFFA684FF)
+val Violet500 = Color(0xFF8E51FF)

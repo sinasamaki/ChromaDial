@@ -16,6 +16,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.dp
@@ -111,19 +112,19 @@ class BentoDrawUtilitiesAnimation : AnimationDefinition() {
                                 drawCircle(
                                     color = Lime400.copy(alpha = 0.25f),
                                     radius = 9.dp.toPx(),
-                                    center = data.position,
+                                    center = Offset.Zero,
                                 )
                                 drawCircle(
                                     color = Lime300,
                                     radius = 5.dp.toPx(),
-                                    center = data.position,
+                                    center = Offset.Zero,
                                 )
                             } else {
                                 // Inactive: visible but muted
                                 drawCircle(
                                     color = Zinc500,
                                     radius = 4.dp.toPx(),
-                                    center = data.position,
+                                    center = Offset.Zero,
                                 )
                             }
                         }

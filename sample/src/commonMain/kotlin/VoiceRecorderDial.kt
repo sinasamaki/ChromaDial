@@ -208,23 +208,13 @@ private fun RecordingDialTrack(state: DialState) {
                         radius = state.radius - 10.dp.toPx(),
                         interval = 5f,
                     ) { interval ->
-                        translate(
-                            left = interval.position.x,
-                            top = interval.position.y,
-                        ) {
-                            rotate(
-                                degrees = interval.rotationAngle,
-                                pivot = Offset(0f, 0f)
-                            ) {
-                                drawLine(
-                                    color = Orange400.copy(alpha = .4f),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(0f, 15f),
-                                    strokeWidth = 2f,
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
+                        drawLine(
+                            color = Orange400.copy(alpha = .4f),
+                            start = Offset(0f, 0f),
+                            end = Offset(0f, 15f),
+                            strokeWidth = 2f,
+                            cap = StrokeCap.Round
+                        )
                     }
 
                     drawEveryInterval(
@@ -232,23 +222,13 @@ private fun RecordingDialTrack(state: DialState) {
                         radius = state.radius - 25.dp.toPx(),
                         interval = 10f,
                     ) { interval ->
-                        translate(
-                            left = interval.position.x,
-                            top = interval.position.y,
-                        ) {
-                            rotate(
-                                degrees = interval.rotationAngle,
-                                pivot = Offset(0f, 0f)
-                            ) {
-                                drawLine(
-                                    color = Orange400.copy(alpha = .4f),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(0f, 10f),
-                                    strokeWidth = 2f,
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
+                        drawLine(
+                            color = Orange400.copy(alpha = .4f),
+                            start = Offset(0f, 0f),
+                            end = Offset(0f, 10f),
+                            strokeWidth = 2f,
+                            cap = StrokeCap.Round
+                        )
                     }
 
                 }

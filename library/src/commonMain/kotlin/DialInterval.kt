@@ -21,6 +21,10 @@ import kotlin.math.abs
  * @param interval Degree spacing between adjacent interval positions.
  * @param currentDegree Current degree in the 0..sweepDegrees space for determining
  *   [IntervalData.inActiveRange].
+ * @param orientation How each interval's content is placed and rotated. Defaults to
+ *   [IntervalOrientation.PositionAndRotate]. Use [IntervalOrientation.PositionOnly] to keep content
+ *   upright (e.g. readable labels), or [IntervalOrientation.None] to place content yourself via
+ *   [IntervalData.position].
  * @param onIntervalContent Composable content for each interval.
  */
 @Composable
@@ -29,6 +33,7 @@ public fun DialInterval(
     modifier: Modifier = Modifier,
     interval: Float,
     currentDegree: Float? = null,
+    orientation: IntervalOrientation = IntervalOrientation.PositionAndRotate,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
     val overshoot = state.overshootDegrees
@@ -42,6 +47,7 @@ public fun DialInterval(
         radius = state.radius,
         interval = interval,
         currentDegree = currentDegree,
+        orientation = orientation,
         onIntervalContent = onIntervalContent,
     )
 }
@@ -56,6 +62,10 @@ public fun DialInterval(
  * @param interval Degree spacing between adjacent interval positions.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
+ * @param orientation How each interval's content is placed and rotated. Defaults to
+ *   [IntervalOrientation.PositionAndRotate]. Use [IntervalOrientation.PositionOnly] to keep content
+ *   upright (e.g. readable labels), or [IntervalOrientation.None] to place content yourself via
+ *   [IntervalData.position].
  * @param onIntervalContent Composable content for each interval.
  */
 @Composable
@@ -66,6 +76,7 @@ public fun DialInterval(
     radius: Float? = null,
     interval: Float,
     currentDegree: Float? = null,
+    orientation: IntervalOrientation = IntervalOrientation.PositionAndRotate,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
     DialIntervalImpl(
@@ -75,6 +86,7 @@ public fun DialInterval(
         radius = radius,
         interval = interval,
         currentDegree = currentDegree,
+        orientation = orientation,
         onIntervalContent = onIntervalContent,
     )
 }
@@ -87,6 +99,7 @@ private fun DialIntervalImpl(
     radius: Float? = null,
     interval: Float,
     currentDegree: Float?,
+    orientation: IntervalOrientation,
     onIntervalContent: @Composable (IntervalData) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -106,15 +119,38 @@ private fun DialIntervalImpl(
         }
 
         for (item in items) {
-            Box(
-                modifier = Modifier
-                    .graphicsLayer {
-                        rotationZ = item.rotationAngle + 90f
+            when (orientation) {
+                // Place along the arc and rotate content to follow the tangent.
+                IntervalOrientation.PositionAndRotate ->
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer { rotationZ = item.rotationAngle + 90f }
+                            .align(Alignment.CenterStart)
+                            .width(with(density) { constraints.maxWidth.toDp() })
+                    ) {
+                        onIntervalContent(item)
                     }
-                    .align(Alignment.CenterStart)
-                    .width(with(density) { constraints.maxWidth.toDp() })
-            ) {
-                onIntervalContent(item)
+
+                // Reuse the same placement, then cancel the tangent rotation on the content so it
+                // stays upright wherever it sits on the arc.
+                IntervalOrientation.PositionOnly ->
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer { rotationZ = item.rotationAngle + 90f }
+                            .align(Alignment.CenterStart)
+                            .width(with(density) { constraints.maxWidth.toDp() })
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .graphicsLayer { rotationZ = -(item.rotationAngle + 90f) }
+                        ) {
+                            onIntervalContent(item)
+                        }
+                    }
+
+                // No placement — the caller positions content via IntervalData.position.
+                IntervalOrientation.None ->
+                    onIntervalContent(item)
             }
         }
     }

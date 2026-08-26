@@ -228,8 +228,13 @@ tr:nth-child(even) {
 	max-width: 320px;
 	width: 100%;
 	border-radius: 16px;
-	border: 1px solid var(--lime-500);
+	border: 1px solid color-mix(in srgb, var(--lime-500) 35%, transparent);
 	overflow: hidden;
+}
+
+/* Wide, short videos (e.g. a row of dials) get more horizontal room. */
+.sl-markdown-content video.wide:not(.bento-video) {
+	max-width: 100%;
 }
 
 /* ============================================

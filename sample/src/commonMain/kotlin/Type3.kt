@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.createTubePath
+import com.sinasamaki.chroma.dial.IntervalOrientation
 import com.sinasamaki.chroma.dial.drawEveryInterval
 
 private fun buildHandPath(
@@ -134,25 +135,23 @@ fun Type3() {
                                 val strokeW = if (isHour) 2.dp.toPx() else 1.dp.toPx()
                                 val color = if (isHour) Lime500 else Lime900
 
-                                rotate(degrees = data.rotationAngle, pivot = data.position) {
-                                    if (isHour) {
-                                        drawCircle(
-                                            color = color,
-                                            center = data.position + Offset(0f, 3.dp.toPx()),
-                                            radius = 3.dp.toPx(),
-                                            style = Stroke(
-                                                width = 1.dp.toPx(),
-                                            )
+                                if (isHour) {
+                                    drawCircle(
+                                        color = color,
+                                        center = Offset(0f, 3.dp.toPx()),
+                                        radius = 3.dp.toPx(),
+                                        style = Stroke(
+                                            width = 1.dp.toPx(),
                                         )
-                                    } else {
-                                        drawLine(
-                                            color = color,
-                                            start = data.position,
-                                            end = data.position + Offset(0f, tickLen),
-                                            strokeWidth = strokeW,
-                                            cap = StrokeCap.Round,
-                                        )
-                                    }
+                                    )
+                                } else {
+                                    drawLine(
+                                        color = color,
+                                        start = Offset.Zero,
+                                        end = Offset(0f, tickLen),
+                                        strokeWidth = strokeW,
+                                        cap = StrokeCap.Round,
+                                    )
                                 }
                             }
                         },
@@ -280,30 +279,24 @@ fun HourDial(modifier: Modifier = Modifier) {
                             interval = 30f,
                         ) { data ->
                             val isCurrent = hour % 360f == data.intervalDegree
-                            rotate(
-                                degrees = data.rotationAngle,
-                                pivot = data.position
-                            ) {
-                                if (isCurrent) {
-                                    drawCircle(
-                                        color = Purple400,
-                                        center = data.position + Offset(0f, 3.dp.toPx()),
-                                        radius = 4.dp.toPx(),
-                                        style = Stroke(4f)
-                                    )
-                                } else {
-                                    drawLine(
-                                        color = Lime700,
-                                        start = data.position,
-                                        end = data.position + Offset(
-                                            0f,
-                                            7.dp.toPx()
-                                        ),
-                                        strokeWidth = 1.5f.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                    )
-                                }
-
+                            if (isCurrent) {
+                                drawCircle(
+                                    color = Purple400,
+                                    center = Offset(0f, 3.dp.toPx()),
+                                    radius = 4.dp.toPx(),
+                                    style = Stroke(4f)
+                                )
+                            } else {
+                                drawLine(
+                                    color = Lime700,
+                                    start = Offset.Zero,
+                                    end = Offset(
+                                        0f,
+                                        7.dp.toPx()
+                                    ),
+                                    strokeWidth = 1.5f.dp.toPx(),
+                                    cap = StrokeCap.Round,
+                                )
                             }
                         }
 
@@ -364,18 +357,16 @@ fun SecondsDial(modifier: Modifier = Modifier) {
                             interval = 6f,
                         ) { data ->
                             val isMinuteMark = data.index % 5 == 0
-                            rotate(degrees = data.rotationAngle, pivot = data.position) {
-                                drawLine(
-                                    color = if (isMinuteMark) Lime600 else Lime900,
-                                    start = data.position,
-                                    end = data.position + Offset(
-                                        0f,
-                                        if (isMinuteMark) 4.dp.toPx() else 2.dp.toPx()
-                                    ),
-                                    strokeWidth = 1.dp.toPx(),
-                                    cap = StrokeCap.Round,
-                                )
-                            }
+                            drawLine(
+                                color = if (isMinuteMark) Lime600 else Lime900,
+                                start = Offset.Zero,
+                                end = Offset(
+                                    0f,
+                                    if (isMinuteMark) 4.dp.toPx() else 2.dp.toPx()
+                                ),
+                                strokeWidth = 1.dp.toPx(),
+                                cap = StrokeCap.Round,
+                            )
                         }
 
                         // Seconds hand
@@ -437,6 +428,7 @@ fun DayOfWeekDial(modifier: Modifier = Modifier) {
                             radius = center.x - 2.dp.toPx(),
                             interval = 360f / 7f,
                             currentDegree = state.degree,
+                            orientation = IntervalOrientation.None,
                         ) { data ->
                             drawPath(
                                 path =

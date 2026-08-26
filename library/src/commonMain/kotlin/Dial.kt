@@ -391,6 +391,7 @@ public fun Dial(
 
     DialImpl(
         state = state,
+        enabled = enabled,
         modifier = modifier,
         interactionSource = interactionSource,
         thumb = thumb,
@@ -490,6 +491,7 @@ public fun Dial(
     }
     DialImpl(
         state = state,
+        enabled = enabled,
         modifier = modifier,
         interactionSource = interactionSource,
         thumb = thumb,
@@ -502,6 +504,7 @@ public fun Dial(
 @Composable
 private fun DialImpl(
     state: DialState,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource,
     thumb: @Composable (DialState) -> Unit,
@@ -589,7 +592,7 @@ private fun DialImpl(
                         thumbPosition = it.positionInParent()
                     }
                     .then(
-                        if (state.enabled) {
+                        if (enabled) {
                             Modifier
                                 .pointerInput(state.degreeRange) {
                                     val centerPx = state.center

@@ -20,7 +20,7 @@ Dial(
 
 When you don't pass `colors`, the dial uses `DialColors.default()` with the built-in lime-on-dark palette — the default thumb, track, and tick marks shown here:
 
-<video src="/dial_colors.webm" autoplay loop muted playsinline></video>
+<video src="/dial_colors.webm" class="wide" autoplay loop muted playsinline></video>
 
 ## Colors
 

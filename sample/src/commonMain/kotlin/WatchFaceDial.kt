@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.drawEveryInterval
-import kotlin.math.sqrt
 
 @Composable
 fun WatchFaceDial() {
@@ -98,28 +97,15 @@ fun WatchFaceDial() {
                                     interval = 3f,
                                 ) { data ->
                                     val isHourMark = data.intervalDegree % 30f == 0f
-                                    val tickLength = if (isHourMark) 100.dp.toPx() else 6.dp.toPx()
                                     val strokeWidth = if (isHourMark) 2.dp.toPx() else 1f.dp.toPx()
                                     val color = if (isHourMark) Lime500 else Lime800
 
-                                    // Inward direction from the arc point toward center
-                                    val dx = data.position.x - center.x
-                                    val dy = data.position.y - center.y
-                                    val dist = sqrt(dx * dx + dy * dy)
-                                    val nx = dx / dist
-                                    val ny = dy / dist
-
-                                    rotate(
-                                        degrees = data.rotationAngle,
-                                        pivot = data.position,
-                                    ) {
-                                        drawLine(
-                                            color = color,
-                                            start = data.position + Offset(0f, 40f),
-                                            end = data.position + Offset(0f, -200f),
-                                            strokeWidth = strokeWidth,
-                                        )
-                                    }
+                                    drawLine(
+                                        color = color,
+                                        start = Offset(0f, 40f),
+                                        end = Offset(0f, -200f),
+                                        strokeWidth = strokeWidth,
+                                    )
                                 }
 
                                 inset(60f) {

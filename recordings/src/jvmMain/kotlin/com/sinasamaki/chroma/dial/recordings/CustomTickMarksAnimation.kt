@@ -103,15 +103,13 @@ class CustomTickMarksAnimation : AnimationDefinition() {
                             interval = 20f,
                             currentDegree = state.degree,
                         ) { data ->
-                            rotate(data.rotationAngle, pivot = data.position) {
-                                drawLine(
-                                    color = if (data.inActiveRange) Lime500 else Zinc600,
-                                    start = data.position,
-                                    end = data.position + Offset(0f, 14f),
-                                    strokeWidth = 2.5.dp.toPx(),
-                                    cap = StrokeCap.Round,
-                                )
-                            }
+                            drawLine(
+                                color = if (data.inActiveRange) Lime500 else Zinc600,
+                                start = Offset.Zero,
+                                end = Offset(0f, 14f),
+                                strokeWidth = 2.5.dp.toPx(),
+                                cap = StrokeCap.Round,
+                            )
                         }
                     })
                 },

@@ -4,28 +4,36 @@ import java.io.File
 
 private val outputDir = File("../docs/public")
 
-fun recordAll() {
-    recorder(HeroAnimation(), outputDir)
-    recorder(IntroArcConfigAnimation(), outputDir)
-    recorder(IntroMultiRingAnimation(), outputDir)
-    recorder(BasicFullCircleAnimation(), outputDir)
-    recorder(BasicSemiCircleAnimation(), outputDir)
-    recorder(BasicSteppedAnimation(), outputDir)
-    recorder(BasicMultiRotationAnimation(), outputDir)
-    recorder(BasicProgrammaticAnimation(), outputDir)
-    recorder(BasicArcShapeAnimation(), outputDir)
-    recorder(BasicSnappingAnimation(), outputDir)
-    recorder(BasicCounterclockwiseAnimation(), outputDir)
-    recorder(BasicMappedValueAnimation(), outputDir)
-    recorder(BentoOvershootAnimation(), outputDir)
-    recorder(BentoDrawUtilitiesAnimation(), outputDir)
-    recorder(BentoDefaultDialAnimation(), outputDir)
-    recorder(CustomInvisibleThumbAnimation(), outputDir)
-    recorder(CustomOvershootAnimation(), outputDir)
-    recorder(CustomTickMarksAnimation(), outputDir)
-    recorder(CustomGradientAnimation(), outputDir)
-    recorder(StateOvershootAnimation(), outputDir)
-    recorder(DialColorsAnimation(), outputDir)
-    recorder(InputInteractionAnimation(), outputDir)
-    recorder(LayoutGaugeAnimation(), outputDir)
+private val allAnimations: List<AnimationDefinition>
+    get() = listOf(
+        HeroAnimation(),
+        IntroArcConfigAnimation(),
+        IntroMultiRingAnimation(),
+        BasicFullCircleAnimation(),
+        BasicSemiCircleAnimation(),
+        BasicSteppedAnimation(),
+        BasicMultiRotationAnimation(),
+        BasicProgrammaticAnimation(),
+        BasicArcShapeAnimation(),
+        BasicSnappingAnimation(),
+        BasicCounterclockwiseAnimation(),
+        BasicMappedValueAnimation(),
+        BentoOvershootAnimation(),
+        BentoDrawUtilitiesAnimation(),
+        BentoDefaultDialAnimation(),
+        CustomInvisibleThumbAnimation(),
+        CustomOvershootAnimation(),
+        CustomTickMarksAnimation(),
+        CustomGradientAnimation(),
+        StateOvershootAnimation(),
+        DialColorsAnimation(),
+        InputInteractionAnimation(),
+        LayoutGaugeAnimation(),
+    )
+
+// When [filter] is non-empty, only animations whose name is in the set are recorded.
+fun recordAll(filter: Set<String> = emptySet()) {
+    allAnimations
+        .filter { filter.isEmpty() || it.name in filter }
+        .forEach { recorder(it, outputDir) }
 }

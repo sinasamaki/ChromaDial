@@ -176,18 +176,13 @@ public fun DefaultDialTrack(state: DialState, colors: DialColors) {
                                         } else {
                                             colors.inactiveTickColor.copy(alpha = alpha)
                                         }
-                                        rotate(
-                                            degrees = data.rotationAngle,
-                                            pivot = data.position
-                                        ) {
-                                            drawLine(
-                                                color = tickColor,
-                                                start = data.position - Offset(0f, 4.dp.toPx()),
-                                                end = data.position + Offset(0f, 4.dp.toPx()),
-                                                strokeWidth = 2.dp.toPx(),
-                                                cap = StrokeCap.Round,
-                                            )
-                                        }
+                                        drawLine(
+                                            color = tickColor,
+                                            start = Offset(0f, -4.dp.toPx()),
+                                            end = Offset(0f, 4.dp.toPx()),
+                                            strokeWidth = 2.dp.toPx(),
+                                            cap = StrokeCap.Round,
+                                        )
                                     }
                                 }
                             }

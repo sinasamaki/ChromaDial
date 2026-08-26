@@ -114,7 +114,9 @@ drawArc(
 
 ### Tick marks
 
-`drawEveryInterval` places a draw callback at regular angular positions. After rotating by `data.rotationAngle`, the `+y` direction points radially inward:
+`drawEveryInterval` places a draw callback at regular angular positions. By default
+(`orientation = IntervalOrientation.PositionAndRotate`) the canvas origin is moved to each interval
+and rotated to the tangent, so you draw relative to `Offset.Zero` with `+y` pointing radially inward:
 
 ```kotlin
 track = { state ->
@@ -122,15 +124,20 @@ track = { state ->
         Modifier
             .fillMaxSize()
             .drawBehind {
-                drawEveryInterval(dialState = state, spacing = 30f) { data ->
-                    rotate(data.rotationAngle, pivot = data.position) {
-                        drawLine(
-                            color = if (data.inActiveRange) Blue500 else Zinc500,
-                            start = data.position,
-                            end = data.position + Offset(0f, 15f),
-                            strokeWidth = 2.dp.toPx(),
-                        )
-                    }
+                drawEveryInterval(
+                    interval = 30f,
+                    startDegrees = state.startDegrees,
+                    sweepDegrees = state.degreeRange.endInclusive - state.degreeRange.start,
+                    center = state.center,
+                    radius = state.radius,
+                    currentDegree = state.degree,
+                ) { data ->
+                    drawLine(
+                        color = if (data.inActiveRange) Blue500 else Zinc500,
+                        start = Offset.Zero,          // the interval position
+                        end = Offset(0f, 15f),        // +y = inward
+                        strokeWidth = 2.dp.toPx(),
+                    )
                 }
             }
     )
@@ -139,16 +146,33 @@ track = { state ->
 
 <video src="/custom_tick_marks.webm" autoplay loop muted playsinline></video>
 
-You can also call `drawEveryInterval` with explicit parameters when you don't have a `DialState`:
+`interval` is the only required parameter — the rest default to a full 360° circle centered in the
+`DrawScope`.
+
+#### Orientation
+
+The `orientation` parameter controls how the canvas is transformed at each interval:
+
+| Value | Effect | Draw at |
+|-------|--------|---------|
+| `IntervalOrientation.PositionAndRotate` *(default)* | Origin at the interval, rotated to the tangent (`+y` inward) — content follows the arc | `Offset.Zero` |
+| `IntervalOrientation.PositionOnly` | Origin at the interval, axes stay screen-aligned — content stays upright | `Offset.Zero` |
+| `IntervalOrientation.None` | No transform — position content yourself | `data.position` |
+
+Use `PositionOnly` for content that must stay readable (e.g. numeric labels) instead of tilting with
+the arc, and `None` when you compute your own polar geometry from `data.intervalDegree`:
 
 ```kotlin
 drawEveryInterval(
+    interval = 30f,
     startDegrees = 180f,
     sweepDegrees = 275f,
     radius = state.radius,
-    spacing = 30f,
     currentDegree = state.degree,
-) { data -> /* ... */ }
+    orientation = IntervalOrientation.None,
+) { data ->
+    // place content yourself using data.position / data.intervalDegree
+}
 ```
 
 ### Value display
@@ -177,8 +201,9 @@ track = { state ->
     DialInterval(
         state = state,
         modifier = Modifier.fillMaxSize(),
-        spacing = 30f,
+        interval = 30f,
         currentDegree = state.degree,
+        orientation = IntervalOrientation.PositionOnly,   // keep labels upright
     ) { data ->
         Text(
             text = "${data.intervalDegree.toInt()}°",
@@ -189,6 +214,11 @@ track = { state ->
 }
 ```
 
+`DialInterval` takes the same `orientation` parameter as `drawEveryInterval`. It defaults to
+`IntervalOrientation.PositionAndRotate` (content rotates to follow the arc); use
+`IntervalOrientation.PositionOnly` to keep labels upright, or `IntervalOrientation.None` to place
+content yourself via `data.position`.
+
 Or with explicit parameters:
 
 ```kotlin
@@ -196,7 +226,7 @@ DialInterval(
     startDegrees = 180f,
     sweepDegrees = 275f,
     radius = state.radius,   // null = use layout width
-    spacing = 30f,
+    interval = 30f,
     currentDegree = state.degree,
 ) { data ->
     Text("${data.index}")
