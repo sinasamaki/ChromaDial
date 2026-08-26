@@ -160,18 +160,13 @@ fun TimerDial() {
                                     radius = it.radius - 25.dp.toPx(),
                                     interval = 30f,
                                 ) { data ->
-                                    rotate(
-                                        degrees = data.rotationAngle,
-                                        pivot = data.position
-                                    ) {
-                                        drawLine(
-                                            color = Zinc800,
-                                            start = data.position,
-                                            end = data.position + Offset(0f, 20f),
-                                            strokeWidth = 5f,
-                                            cap = StrokeCap.Round,
-                                        )
-                                    }
+                                    drawLine(
+                                        color = Zinc800,
+                                        start = Offset.Zero,
+                                        end = Offset(0f, 20f),
+                                        strokeWidth = 5f,
+                                        cap = StrokeCap.Round,
+                                    )
                                 }
                                 // interval = 6° for 61 positions (same as steps=59)
                                 drawEveryInterval(
@@ -179,17 +174,12 @@ fun TimerDial() {
                                     radius = it.radius - 25.dp.toPx(),
                                     interval = 6f,
                                 ) { data ->
-                                    rotate(
-                                        degrees = data.rotationAngle,
-                                        pivot = data.position
-                                    ) {
-                                        drawLine(
-                                            color = Zinc800,
-                                            start = data.position,
-                                            end = data.position + Offset(0f, 10f),
-                                            strokeWidth = 3f,
-                                        )
-                                    }
+                                    drawLine(
+                                        color = Zinc800,
+                                        start = Offset.Zero,
+                                        end = Offset(0f, 10f),
+                                        strokeWidth = 3f,
+                                    )
                                 }
 
                             }

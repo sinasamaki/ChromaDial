@@ -5,6 +5,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -13,9 +15,14 @@ import kotlin.math.atan2
  * Data class containing information about each interval position on the dial.
  *
  * @property index The index of this interval (0-based)
- * @property position The pixel position of this interval on the dial path
- * @property rotationAngle The tangent angle in degrees at this position (useful for rotating
- *   content to align with the arc direction)
+ * @property position The absolute pixel position of this interval on the dial path. With
+ *   [IntervalOrientation.PositionAndRotate] or [IntervalOrientation.PositionOnly] the drawing origin
+ *   is already moved here, so draw relative to [Offset.Zero] and ignore this value; it is only needed
+ *   with [IntervalOrientation.None].
+ * @property rotationAngle The tangent angle in degrees at this position. With
+ *   [IntervalOrientation.PositionAndRotate] the canvas is already rotated by this amount (so `+y`
+ *   points radially inward); with [IntervalOrientation.None] use it to rotate content yourself to
+ *   align with the arc direction.
  * @property intervalDegree The degree value at this interval, in the 0..sweepDegrees space
  * @property inActiveRange Whether this interval is within the active/selected range
  * @property progress The normalized progress (0-1) of this interval within the total range
@@ -28,6 +35,33 @@ public data class IntervalData(
     val inActiveRange: Boolean,
     val progress: Float,
 )
+
+/**
+ * Controls how [drawEveryInterval] and [DialInterval] transform the canvas / layout at each interval
+ * position before emitting content.
+ */
+public enum class IntervalOrientation {
+    /**
+     * The origin is moved to the interval's position and rotated by its tangent angle, so `+y`
+     * points radially inward. Draw/place content relative to the origin ([Offset.Zero]); content
+     * follows the curve of the arc. This is the default.
+     */
+    PositionAndRotate,
+
+    /**
+     * The origin is moved to the interval's position, but the axes stay screen-aligned (no
+     * rotation). Draw/place content relative to the origin ([Offset.Zero]); content stays upright
+     * regardless of where it sits on the arc — ideal for readable labels.
+     */
+    PositionOnly,
+
+    /**
+     * No transform is applied. Position content yourself using [IntervalData.position] and, if
+     * needed, [IntervalData.rotationAngle] — for example when computing your own polar geometry from
+     * [IntervalData.intervalDegree].
+     */
+    None,
+}
 
 /**
  * Shared helper that builds a list of [IntervalData] for positions along an arc.
@@ -101,56 +135,30 @@ internal fun buildIntervalData(
 }
 
 /**
- * Draws content at regular [interval]-degree intervals along the [dialState]'s arc.
- *
- * @param dialState The dial state to derive arc geometry from.
- * @param interval Degree spacing between adjacent draw positions. Note: this controls the visual
- *   drawing cadence and is independent of the dial's snap interval ([DialState.interval]).
- * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
- * @param onDraw Called for each interval with its [IntervalData].
- */
-public fun DrawScope.drawEveryInterval(
-    dialState: DialState,
-    interval: Float,
-    center: Offset = this.center,
-    onDraw: DrawScope.(IntervalData) -> Unit,
-) {
-    val overshoot = dialState.overshootDegrees
-    val sweepDegrees = dialState.degreeRange.endInclusive - dialState.degreeRange.start
-    val direction = if (dialState.clockwise) 1f else -1f
-    val startAdjust = if (dialState.clockwise) minOf(0f, overshoot) else maxOf(0f, overshoot)
-    val items = buildIntervalData(
-        startDegrees = dialState.startDegrees + startAdjust,
-        sweepDegrees = direction * (sweepDegrees + abs(overshoot)),
-        center = center,
-        radius = dialState.radius,
-        interval = interval,
-        currentDegree = dialState.degree + maxOf(0f, direction * overshoot),
-    )
-    for (item in items) {
-        onDraw(item)
-    }
-}
-
-/**
  * Draws content at regular [interval]-degree intervals along an arc.
  *
- * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
- * @param sweepDegrees Total arc sweep in degrees.
- * @param radius Arc radius in pixels.
  * @param interval Degree spacing between adjacent draw positions.
+ * @param startDegrees Visual start of the arc in degrees (0° = 12 o'clock). Defaults to 0.
+ * @param sweepDegrees Total arc sweep in degrees. Defaults to a full 360° circle.
  * @param center Center of the arc in pixels. Defaults to the [DrawScope]'s center.
+ * @param radius Arc radius in pixels. Defaults to the largest circle that fits, i.e. the smaller of
+ *   [center]'s x/y.
  * @param currentDegree Current degree in the 0..[sweepDegrees] space for determining
  *   [IntervalData.inActiveRange].
+ * @param orientation How the canvas is transformed at each interval before [onDraw] runs. Defaults
+ *   to [IntervalOrientation.PositionAndRotate]. See [IntervalOrientation] for the alternatives
+ *   ([IntervalOrientation.PositionOnly] keeps content upright; [IntervalOrientation.None] leaves the
+ *   [DrawScope] untransformed).
  * @param onDraw Called for each interval with its [IntervalData].
  */
 public fun DrawScope.drawEveryInterval(
-    startDegrees: Float = 0f,
-    sweepDegrees: Float,
-    radius: Float,
     interval: Float,
+    startDegrees: Float = 0f,
+    sweepDegrees: Float = 360f,
     center: Offset = this.center,
+    radius: Float = minOf(center.x, center.y),
     currentDegree: Float? = null,
+    orientation: IntervalOrientation = IntervalOrientation.PositionAndRotate,
     onDraw: DrawScope.(IntervalData) -> Unit,
 ) {
     val items = buildIntervalData(
@@ -162,6 +170,21 @@ public fun DrawScope.drawEveryInterval(
         currentDegree = currentDegree,
     )
     for (item in items) {
-        onDraw(item)
+        when (orientation) {
+            IntervalOrientation.PositionAndRotate ->
+                translate(left = item.position.x, top = item.position.y) {
+                    rotate(degrees = item.rotationAngle, pivot = Offset.Zero) {
+                        onDraw(item)
+                    }
+                }
+
+            IntervalOrientation.PositionOnly ->
+                translate(left = item.position.x, top = item.position.y) {
+                    onDraw(item)
+                }
+
+            IntervalOrientation.None ->
+                onDraw(item)
+        }
     }
 }

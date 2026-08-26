@@ -19,7 +19,8 @@ Once installed, import the Dial component:
 import com.sinasamaki.chroma.dial.Dial
 import com.sinasamaki.chroma.dial.DialColors
 import com.sinasamaki.chroma.dial.DialState
-import com.sinasamaki.chroma.dial.RadiusMode
+import com.sinasamaki.chroma.dial.rememberDialState
+import com.sinasamaki.chroma.dial.DialLayout
 ```
 
 ## Next Steps

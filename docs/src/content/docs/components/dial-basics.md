@@ -1,11 +1,11 @@
 ---
 title: Dial Basics
-description: Learn the fundamentals of the Dial component and its parameters.
+description: Get started with the Dial component.
 ---
 
-The `Dial` composable is the core component of ChromaDial. It provides a circular draggable control that users can interact with by dragging around its circumference.
+The `Dial` is a circular draggable control. Users spin it by dragging along its circumference, and you get back a degree value you can use however you like — to control volume, pick a temperature, set a timer, or anything in between.
 
-## Basic Usage
+## Your first Dial
 
 ```kotlin
 var degree by remember { mutableFloatStateOf(0f) }
@@ -14,303 +14,99 @@ Dial(
     degree = degree,
     onDegreeChange = { degree = it },
     modifier = Modifier.size(200.dp),
-    startDegrees = 0f,
-    sweepDegrees = 360f,
 )
 ```
 
-## API Variants
+`Dial` is a controlled component — you own the state. Pass the current `degree` in, receive updates via `onDegreeChange`, and store the new value yourself.
 
-ChromaDial provides four overloaded versions of the `Dial` composable.
+## Shaping the arc
 
-### Simple API (with DialColors)
+<video src="/basics_arc_shape.webm" autoplay loop muted playsinline></video>
 
-Use this when you want to customize colors while using the default thumb and track:
+Two parameters control where the dial sits on screen and how far it sweeps:
+
+- **`startDegrees`** — the screen angle where `degree = 0`. Think of a clock: `0f` is 12 o'clock, `90f` is 3 o'clock, `180f` is 6 o'clock, `270f` is 9 o'clock.
+- **`sweepDegrees`** — how many degrees the user can rotate from the start to the end. Defaults to `360f`. Can exceed 360 for multi-rotation dials.
 
 ```kotlin
 Dial(
     degree = degree,
     onDegreeChange = { degree = it },
-    startDegrees = 270f,
-    sweepDegrees = 180f,
-    colors = DialColors.default(
-        activeTrackColor = Blue500,
-        thumbStrokeColor = Blue400,
-    ),
+    startDegrees = 225f,   // starts at ~7 o'clock
+    sweepDegrees = 270f,   // sweeps ¾ of the way around
 )
 ```
 
-### Custom API (with thumb/track composables)
+## Snapping
 
-Use this when you need full control over the thumb and track appearance:
+<video src="/basics_snapping.webm" autoplay loop muted playsinline></video>
+
+By default the rotation is continuous. Use `interval` or `steps` to add discrete snap points:
 
 ```kotlin
-Dial(
-    degree = degree,
-    onDegreeChange = { degree = it },
-    startDegrees = 270f,
-    sweepDegrees = 180f,
-    thumb = { state -> /* custom thumb */ },
-    track = { state -> /* custom track */ },
-)
+interval = 15f   // snaps every 15°
+steps = 12       // 12 evenly spaced stops across the sweep
 ```
 
-### State-based API
+`steps` is handy when you know how many positions you need. `interval` is handy when you care about the spacing between them. Setting both? `steps` wins.
 
-Use `rememberDialState` to manage state externally, then pass it to a state-based `Dial` overload. This is useful when you need to call `state.animateTo()` or read state properties outside the thumb/track composables.
+## Reading the value
+
+<video src="/basics_mapped_value.webm" autoplay loop muted playsinline></video>
+
+`degree` is the raw angle from `0` to `sweepDegrees`. Two derived readings are usually more convenient:
+
+- **`value`** — normalized `0f..1f` across the sweep
+- **`mappedValue`** — `value` rescaled into a `valueRange` you choose (temperature, volume, percent…)
+
+Both live on `DialState`. The simplest way to read them outside the dial is the [state-based API](/components/state-based-api/), where you hold the state yourself:
 
 ```kotlin
-val state = rememberDialState(
-    initialDegree = 0f,
-    sweepDegrees = 275f,
-    startDegrees = 180f,
-    interval = 15f,
-    valueRange = 0f..100f,
-)
-val scope = rememberCoroutineScope()
+val state = rememberDialState()
 
-// Simple colors variant
-Dial(state = state, colors = DialColors.default())
-
-// Or custom composables variant
 Dial(
     state = state,
-    thumb = { s -> CustomThumb(s) },
-    track = { s -> CustomTrack(s) },
+    sweepDegrees = 270f,
+    valueRange = 0f..100f,
 )
 
-// Programmatic animation
-Button(onClick = { scope.launch { state.animateTo(0f) } }) {
-    Text("Reset")
-}
+Text("${state.mappedValue.toInt()}°C")
 ```
 
-## Parameters
+Inside a custom `thumb` or `track`, the same `state` is handed to you — so you can render the value right on the dial. See [Custom Thumb & Track](/components/customization/).
 
-### degree
-**Type:** `Float`
+## Counterclockwise
 
-The current rotation angle of the dial in degrees, **relative to `startDegrees`**. This value ranges from `0` to `sweepDegrees`.
+<video src="/basics_counterclockwise.webm" autoplay loop muted playsinline></video>
 
-- `0f` is at the start position (determined by `startDegrees`)
-- `sweepDegrees` is at the end position
-- Intermediate values represent positions along the arc
+Set `clockwise = false` and the thumb moves the other way. Everything else — `degree`, `value`, `startDegrees` — behaves the same.
 
-### onDegreeChange
-**Type:** `(Float) -> Unit`
+## Sizing and position
 
-Callback invoked when the user drags the dial. Update your state in this callback:
+By default the dial is centered in its bounds and its radius is half the **width**. Pass a `layout` to change that — base the radius on height, shrink it to leave room for labels, or move the center (handy for gauges anchored to the bottom edge):
 
 ```kotlin
-onDegreeChange = { newDegree -> degree = newDegree }
-```
-
-### modifier
-**Type:** `Modifier`
-**Default:** `Modifier`
-
-Standard Compose modifier for sizing and positioning the dial.
-
-```kotlin
-modifier = Modifier.size(200.dp)         // Square dial
-modifier = Modifier.size(200.dp, 100.dp) // Semi-circle
-```
-
-### startDegrees
-**Type:** `Float`
-**Default:** `0f`
-
-The starting angle of the arc in absolute screen coordinates.
-
-- `0f` - Top (12 o'clock)
-- `90f` - Right (3 o'clock)
-- `180f` - Bottom (6 o'clock)
-- `270f` - Left (9 o'clock)
-
-When `degree = 0f`, the thumb is at `startDegrees`.
-
-### sweepDegrees
-**Type:** `Float`
-**Default:** `360f`
-
-How many degrees the dial can sweep from the start position. The `degree` parameter ranges from `0` to `sweepDegrees`. Can exceed 360 for multi-rotation dials.
-
-### interval
-**Type:** `Float`
-**Default:** `0f`
-
-The degree interval between snap points. When `0f`, rotation is continuous. When set to `15f`, the dial snaps every 15 degrees.
-
-```kotlin
-interval = 0f   // Continuous rotation
-interval = 15f  // Snap every 15 degrees
-interval = 30f  // Snap every 30 degrees
-```
-
-The end of the range is always a valid snap point.
-
-### steps
-**Type:** `Int`
-**Default:** `0`
-
-Number of evenly-spaced snap steps. When `> 0`, overrides `interval` by computing `sweepDegrees / steps`. Useful when you know how many discrete positions you need rather than the degree spacing.
-
-```kotlin
-steps = 12  // 12 evenly spaced positions across the sweep
-```
-
-### valueRange
-**Type:** `ClosedFloatingPointRange<Float>`
-**Default:** `0f..1f`
-
-Maps `DialState.value` to a custom range via `DialState.mappedValue`. Useful for working in natural units:
-
-```kotlin
-valueRange = 0f..100f   // mappedValue gives 0–100
-valueRange = 0f..11f    // Goes to 11
-```
-
-### clockwise
-**Type:** `Boolean`
-**Default:** `true`
-
-When `false`, the dial rotates counterclockwise as the user drags.
-
-### enabled
-**Type:** `Boolean`
-**Default:** `true`
-
-When `false`, the dial ignores drag input and displays without the hand cursor.
-
-### overshootDecay
-**Type:** `Float`
-**Default:** `0.5f`
-
-Controls how strongly the overshoot is dampened when the user drags beyond the limits. `0f` = no dampening; `1f` = no visible overshoot.
-
-### overshootAnimationSpec
-**Type:** `AnimationSpec<Float>`
-**Default:** `spring()`
-
-The animation used to spring back after an overshoot.
-
-### colors
-**Type:** `DialColors`
-**Default:** `DialColors.default()`
-*(Simple API only)*
-
-Customize the appearance of the default thumb and track.
-
-### thumb
-*(Custom API only)*
-**Type:** `@Composable (DialState) -> Unit`
-
-Custom composable for the draggable handle.
-
-### track
-*(Custom API only)*
-**Type:** `@Composable (DialState) -> Unit`
-
-Custom composable for the background track.
-
-### interactionSource
-**Type:** `MutableInteractionSource`
-**Default:** `remember { MutableInteractionSource() }`
-
-Allows observing hover and drag states:
-
-```kotlin
-val interactionSource = remember { MutableInteractionSource() }
-val isDragging by interactionSource.collectIsDraggedAsState()
-
-Dial(interactionSource = interactionSource, /* ... */)
-```
-
-### onDegreeChangeFinished
-**Type:** `(() -> Unit)?`
-**Default:** `null`
-
-Callback invoked when the user finishes dragging (lifts finger / releases mouse).
-
-## Common Patterns
-
-### Full Circle Dial
-
-```kotlin
-var degree by remember { mutableFloatStateOf(0f) }
-
 Dial(
     degree = degree,
     onDegreeChange = { degree = it },
-    modifier = Modifier.size(200.dp),
-    startDegrees = 0f,
-    sweepDegrees = 360f,
-)
-```
-
-### Semi-Circle (Top Arc)
-
-```kotlin
-var degree by remember { mutableFloatStateOf(90f) }
-
-Dial(
-    degree = degree,
-    onDegreeChange = { degree = it },
-    modifier = Modifier.size(200.dp, 100.dp),
+    modifier = Modifier.size(200.dp, 110.dp),
     startDegrees = 270f,
     sweepDegrees = 180f,
-    radiusMode = RadiusMode.HEIGHT,
+    layout = DialLayout.height(),   // radius from height instead of width
 )
 ```
 
-### Stepped Selector (like a camera mode dial)
+See [DialLayout](/reference/dial-layout/) for `radiusFraction` and custom `center` positioning.
 
-```kotlin
-var degree by remember { mutableFloatStateOf(90f) }
-val animatedDegree by animateFloatAsState(degree)
+## Disabling the dial
 
-Dial(
-    degree = animatedDegree,
-    onDegreeChange = { degree = it },
-    modifier = Modifier.size(200.dp),
-    startDegrees = -90f,
-    sweepDegrees = 220f,
-    interval = 20f,
-)
-```
+Set `enabled = false` to make the dial non-interactive. It still renders, but ignores drag input and hides the pointer cursor.
 
-### Multi-Rotation (like a timer)
+## What's next
 
-When `sweepDegrees` exceeds 360, the default track displays multiple rings with animated transitions.
-
-```kotlin
-val sweepDegrees = 360f * 4
-var degree by remember { mutableFloatStateOf(sweepDegrees) }
-
-Dial(
-    degree = degree,
-    onDegreeChange = { degree = it },
-    modifier = Modifier.size(300.dp),
-    sweepDegrees = sweepDegrees,
-    interval = 6f,
-)
-```
-
-### Programmatic Animation
-
-```kotlin
-val state = rememberDialState(sweepDegrees = 360f)
-val scope = rememberCoroutineScope()
-
-Dial(state = state)
-
-Button(onClick = { scope.launch { state.animateTo(180f) } }) {
-    Text("Go to halfway")
-}
-```
-
-## Next Steps
-
-- [Customization](/components/customization/) - Create custom thumb and track designs
-- [DialColors Reference](/reference/dial-colors/) - Complete colors API documentation
-- [DialState Reference](/reference/dial-state/) - Understand the state object
+- [Common Patterns](/components/common-patterns/) — full circle, semi-circle, stepped, multi-rotation, and more
+- [Default Dial Colors](/components/dial-colors/) — customizing colors with `DialColors`
+- [Custom Thumb & Track](/components/customization/) — full visual control with composable slots
+- [State-based API](/components/state-based-api/) — manage state externally for programmatic animation
+- [Overshoot](/components/overshoot/) — the rubber-band effect at the limits
+- [Responding to Input](/components/responding-to-input/) — react to drag, hover, and release events

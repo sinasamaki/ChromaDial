@@ -102,28 +102,23 @@ fun ProgressGaugeDial() {
                                 drawCircle(
                                     color = Zinc800,
                                     radius = 2f,
-                                    center = data.position,
+                                    center = Offset.Zero,
                                 )
 
-                                rotate(
-                                    degrees = data.rotationAngle,
-                                    pivot = data.position,
-                                ) {
-                                    drawLine(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                if (data.inActiveRange) Yellow200 else Zinc700,
-                                                if (data.inActiveRange) Green500 else Zinc800,
-                                                if (data.inActiveRange) Yellow200 else Zinc700,
-                                            ),
-                                            startY = data.position.y + 20f,
-                                            endY = data.position.y - 20f,
+                                drawLine(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            if (data.inActiveRange) Yellow200 else Zinc700,
+                                            if (data.inActiveRange) Green500 else Zinc800,
+                                            if (data.inActiveRange) Yellow200 else Zinc700,
                                         ),
-                                        start = data.position + Offset(0f, 20f),
-                                        end = data.position - Offset(0f, 20f),
-                                        strokeWidth = 1.dp.toPx()
-                                    )
-                                }
+                                        startY = 20f,
+                                        endY = -20f,
+                                    ),
+                                    start = Offset(0f, 20f),
+                                    end = Offset(0f, -20f),
+                                    strokeWidth = 1.dp.toPx()
+                                )
                             }
                         }
                 ) {

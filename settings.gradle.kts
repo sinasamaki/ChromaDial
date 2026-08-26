@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 rootProject.name = "ChromaDial"
 include(":library")
 include(":sample")
+include(":recordings")

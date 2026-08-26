@@ -84,6 +84,9 @@ fun Sample() {
             item {
                 MonthDurationPicker()
             }
+            item {
+                UprightLabelsDial()
+            }
         }
     }
 

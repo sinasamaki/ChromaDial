@@ -148,7 +148,7 @@ fun MonthDurationPicker() {
                                     drawCircle(
                                         color = Neutral500,
                                         radius = 3.dp.toPx(),
-                                        center = data.position,
+                                        center = Offset.Zero,
                                     )
                                 }
                             },
